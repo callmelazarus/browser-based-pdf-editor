@@ -36,6 +36,19 @@ describe('page-space', () => {
     expect(userToViewport(g, 1, { x: 310, y: 20 })).toEqual({ x: 300, y: 400 })
   })
 
+  it('honours a non-zero crop origin for rotated pages (literal forward values)', () => {
+    const at = (rotate: PageGeometry['rotate']): PageGeometry => ({ view: [10, 20, 310, 420], rotate })
+    // 90: viewport 400x300; bottom-left of crop box -> top-left, top-right -> bottom-right
+    expect(userToViewport(at(90), 1, { x: 10, y: 20 })).toEqual({ x: 0, y: 0 })
+    expect(userToViewport(at(90), 1, { x: 310, y: 420 })).toEqual({ x: 400, y: 300 })
+    // 180: viewport 300x400; bottom-right of crop box -> top-left, top-left -> bottom-right
+    expect(userToViewport(at(180), 1, { x: 310, y: 20 })).toEqual({ x: 0, y: 0 })
+    expect(userToViewport(at(180), 1, { x: 10, y: 420 })).toEqual({ x: 300, y: 400 })
+    // 270: viewport 400x300; top-left of crop box -> bottom-left, bottom-right -> top-right
+    expect(userToViewport(at(270), 1, { x: 10, y: 420 })).toEqual({ x: 0, y: 300 })
+    expect(userToViewport(at(270), 1, { x: 310, y: 20 })).toEqual({ x: 400, y: 0 })
+  })
+
   it('round-trips points for every rotation, crop box and scale', () => {
     for (const rotate of [0, 90, 180, 270] as const) {
       const g: PageGeometry = { view: [10, 20, 310, 420], rotate }
