@@ -158,3 +158,40 @@ describe('exportPdf edge cases', () => {
     expect(dicts.map(subtype)).toEqual(['Link', 'Highlight'])
   })
 })
+
+describe('QuadPoints on rotated pages', () => {
+  const r = { x: 10, y: 20, width: 100, height: 50 }
+  const cases: [0 | 90 | 180 | 270, string][] = [
+    [0, '[ 10 70 110 70 10 20 110 20 ]'],
+    [90, '[ 10 20 10 70 110 20 110 70 ]'],
+    [180, '[ 110 20 10 20 110 70 10 70 ]'],
+    [270, '[ 110 70 110 20 10 70 10 20 ]'],
+  ]
+  for (const [rot, expected] of cases) {
+    it(`derives QuadPoints from the screen frame at rotation ${rot}`, async () => {
+      const source = await makePdf([{ width: 612, height: 792, rotate: rot }])
+      const types = ['highlight', 'underline', 'strikeout'] as const
+      const anns: Annotation[] = types.map((type) =>
+        type === 'highlight'
+          ? { ...base, id: type, pageRotation: rot, type, rect: r }
+          : { ...base, id: type, pageRotation: rot, type, strokeWidth: 2, rect: r })
+      const { bytes } = await exportPdf(source, anns)
+      const { dicts } = await readAnnots(bytes)
+      for (const d of dicts) {
+        expect(d.lookup(PDFName.of('QuadPoints'))!.toString()).toBe(expected)
+        expect(d.lookup(PDFName.of('Rect'))!.toString()).toBe('[ 10 20 110 70 ]')
+      }
+    })
+  }
+
+  it('puts the underline edge on the QuadPoints bottom edge at rotation 90', async () => {
+    const source = await makePdf([{ width: 612, height: 792, rotate: 90 }])
+    const { bytes } = await exportPdf(source, one({ ...base, id: 'u', pageRotation: 90, type: 'underline', strokeWidth: 2, rect: r }))
+    const { dicts } = await readAnnots(bytes)
+    // AP matrix 0 1 -1 0 110 20; line at local y=1 -> page x = 110 - 1 = 109, running along page y.
+    // QuadPoints bottom edge (BL,BR) is page x=110, the same edge.
+    expect(apText(dicts[0]!)).toContain('0 1 -1 0 110 20 cm')
+    expect(apText(dicts[0]!)).toContain('0 1 m')
+    expect(dicts[0]!.lookup(PDFName.of('QuadPoints'))!.toString()).toContain('110 20 110 70 ]')
+  })
+})

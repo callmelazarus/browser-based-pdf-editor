@@ -1,5 +1,5 @@
 import { PDFDocument, PDFHexString, PDFName, PDFPage, PDFRef, PDFString, StandardFonts } from 'pdf-lib'
-import { screenFrame } from '../coords/frame'
+import { applyMatrix, screenFrame } from '../coords/frame'
 import type { Annotation } from '../model/types'
 import { buildAppearance } from '../shapes/appearance'
 import { loadHelvetica } from '../text/helvetica'
@@ -105,9 +105,11 @@ function typeFields(a: Annotation): Record<string, unknown> {
     case 'highlight':
     case 'underline':
     case 'strikeout': {
-      const { x, y, width, height } = a.rect
-      // Top-left, top-right, bottom-left, bottom-right: the order Acrobat and Preview expect.
-      return { C: color, QuadPoints: [x, y + height, x + width, y + height, x, y, x + width, y] }
+      // Top-left, top-right, bottom-left, bottom-right as seen on screen (the order Acrobat and
+      // Preview expect), mapped to user space so rotated pages agree with the appearance stream.
+      const f = screenFrame(a.rect, a.pageRotation)
+      const corners = [{ x: 0, y: f.height }, { x: f.width, y: f.height }, { x: 0, y: 0 }, { x: f.width, y: 0 }]
+      return { C: color, QuadPoints: corners.flatMap((c) => { const p = applyMatrix(f.matrix, c); return [p.x, p.y] }) }
     }
     case 'rectangle':
     case 'ellipse':
