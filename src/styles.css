@@ -16,3 +16,6 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .pages { flex: 1; overflow: auto; padding: 16px 0; }
 .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
 .page canvas { display: block; }
+.toolbar { display: flex; gap: 4px; flex-wrap: wrap; }
+.overlay { position: absolute; inset: 0; }
+.overlay svg { display: block; position: absolute; inset: 0; touch-action: none; }

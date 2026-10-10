@@ -1,10 +1,17 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { viewportSize } from '../coords/page-space'
+import { createStore } from '../model/store'
 import type { OpenFile } from './open-file'
+import { Overlay } from './Overlay'
 import { PageView } from './PageView'
+import { DEFAULT_STYLES, type Tool, type ToolStyles } from './tools'
+import { Toolbar } from './Toolbar'
 import { nextZoom } from './zoom'
 
 export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void }) {
+  const store = useMemo(() => createStore(), [])
+  const [tool, setTool] = useState<Tool>('select')
+  const [styles] = useState<ToolStyles>(DEFAULT_STYLES)
   const [scale, setScale] = useState(1)
   const pagesRef = useRef<HTMLDivElement | null>(null)
   // State (not just a ref) so pages create their observers once the scroller exists.
@@ -27,6 +34,7 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
       <header className="topbar">
         <button className="button" onClick={onClose}>Open another file</button>
         <strong className="filename">{file.name}</strong>
+        <Toolbar tool={tool} onTool={setTool} />
         <span className="spacer" />
         <div className="zoom">
           <button className="button" data-testid="zoom-out" onClick={() => setScale((s) => nextZoom(s, -1))}>−</button>
@@ -40,7 +48,9 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
         ref={setPagesRef}
       >
         {file.doc.pages.map((p) => (
-          <PageView key={p.index} page={p} scale={scale} root={pagesEl} />
+          <PageView key={p.index} page={p} scale={scale} root={pagesEl}>
+            <Overlay pageIndex={p.index} geometry={p.geometry} scale={scale} tool={tool} styles={styles} store={store} />
+          </PageView>
         ))}
       </div>
     </div>
