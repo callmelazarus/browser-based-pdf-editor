@@ -1,0 +1,160 @@
+import { describe, expect, it } from 'vitest'
+import { PDFDict, PDFDocument, PDFName, PDFStream, PDFString } from 'pdf-lib'
+import { makePdf } from '../../tests/helpers/makePdf'
+import type { Annotation } from '../model/types'
+import { exportPdf } from './export-pdf'
+
+const base = { page: 0, pageRotation: 0 as const, color: { r: 1, g: 0, b: 0 }, opacity: 0.5 }
+const rect = { x: 10, y: 20, width: 100, height: 50 }
+
+async function readAnnots(bytes: Uint8Array, pageIndex = 0) {
+  const doc = await PDFDocument.load(bytes)
+  const arr = doc.getPage(pageIndex).node.Annots()
+  const dicts = (arr?.asArray() ?? []).map((ref) => doc.context.lookup(ref, PDFDict))
+  return { doc, dicts }
+}
+const subtype = (d: PDFDict) => (d.get(PDFName.of('Subtype')) as PDFName).decodeText()
+const nm = (d: PDFDict) => d.lookup(PDFName.of('NM'), PDFString).decodeText()
+function apText(d: PDFDict): string {
+  const ap = d.lookup(PDFName.of('AP'), PDFDict)
+  const stream = ap.lookup(PDFName.of('N'), PDFStream)
+  return new TextDecoder().decode(stream.getContents())
+}
+
+const one = (a: Annotation) => [a]
+
+describe('exportPdf', () => {
+  it('writes a native annotation with an appearance stream for each type', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const annotations: Annotation[] = [
+      { ...base, id: 'h', type: 'highlight', rect },
+      { ...base, id: 'u', type: 'underline', strokeWidth: 2, rect },
+      { ...base, id: 's', type: 'strikeout', strokeWidth: 2, rect },
+      { ...base, id: 'r', type: 'rectangle', strokeWidth: 2, rect },
+      { ...base, id: 'e', type: 'ellipse', strokeWidth: 2, rect },
+      { ...base, id: 'l', type: 'line', strokeWidth: 2, from: { x: 0, y: 0 }, to: { x: 50, y: 50 } },
+      { ...base, id: 'a', type: 'arrow', strokeWidth: 2, from: { x: 0, y: 0 }, to: { x: 50, y: 50 } },
+      { ...base, id: 'p', type: 'pen', strokeWidth: 2, points: [{ x: 1, y: 1 }, { x: 9, y: 9 }] },
+      { ...base, id: 't', type: 'text', rect, text: 'Hello', fontSize: 12 },
+    ]
+    const { bytes, problems } = await exportPdf(source, annotations)
+    expect(problems).toEqual([])
+    const { dicts } = await readAnnots(bytes)
+    expect(dicts.map(subtype)).toEqual([
+      'Highlight', 'Underline', 'StrikeOut', 'Square', 'Circle', 'Line', 'Line', 'Ink', 'FreeText',
+    ])
+    expect(dicts.map(nm)).toEqual(['h', 'u', 's', 'r', 'e', 'l', 'a', 'p', 't'])
+    for (const d of dicts) expect(apText(d).length).toBeGreaterThan(0)
+  })
+
+  it('writes type-specific fields', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const { bytes } = await exportPdf(source, [
+      { ...base, id: 'h', type: 'highlight', rect },
+      { ...base, id: 't', type: 'text', rect, text: 'Hi', fontSize: 12 },
+    ])
+    const { dicts } = await readAnnots(bytes)
+    const quad = dicts[0]!.lookup(PDFName.of('QuadPoints'))!.toString()
+    expect(quad).toBe('[ 10 70 110 70 10 20 110 20 ]')
+    expect(dicts[1].has(PDFName.of('DA'))).toBe(true)
+    expect(dicts[1].has(PDFName.of('C'))).toBe(false)
+  })
+
+  it('puts a multiply blend in the highlight appearance resources', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const { bytes } = await exportPdf(source, one({ ...base, id: 'h', type: 'highlight', rect }))
+    const { dicts } = await readAnnots(bytes)
+    const stream = dicts[0].lookup(PDFName.of('AP'), PDFDict).lookup(PDFName.of('N'), PDFStream)
+    expect(stream.dict.toString()).toContain('/BM /Multiply')
+  })
+
+  it('places each annotation on its own page', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }, { width: 612, height: 792 }])
+    const { bytes } = await exportPdf(source, one({ ...base, id: 'x', page: 1, type: 'highlight', rect }))
+    expect((await readAnnots(bytes, 0)).dicts).toHaveLength(0)
+    expect((await readAnnots(bytes, 1)).dicts).toHaveLength(1)
+  })
+
+  it('never modifies the original bytes', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const copy = source.slice()
+    await exportPdf(source, one({ ...base, id: 'h', type: 'highlight', rect }))
+    expect(source).toEqual(copy)
+  })
+
+  it('keeps existing annotations, including those from a previous export', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const first = await exportPdf(source, one({ ...base, id: 'a', type: 'highlight', rect }))
+    const second = await exportPdf(first.bytes, one({ ...base, id: 'b', type: 'rectangle', strokeWidth: 2, rect }))
+    const { dicts } = await readAnnots(second.bytes)
+    expect(dicts.map(nm)).toEqual(['a', 'b'])
+  })
+
+  it('reports an error for a bad page but still writes the others', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const { bytes, problems } = await exportPdf(source, [
+      { ...base, id: 'bad', page: 5, type: 'highlight', rect },
+      { ...base, id: 'ok', type: 'highlight', rect },
+    ])
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toMatchObject({ annotationId: 'bad', severity: 'error' })
+    expect((await readAnnots(bytes)).dicts.map(nm)).toEqual(['ok'])
+  })
+
+  it('warns about unsupported characters and clipped text, but still exports', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const { bytes, problems } = await exportPdf(source, [
+      { ...base, id: 'emoji', type: 'text', rect, text: 'Hi 😀', fontSize: 12 },
+      { ...base, id: 'long', type: 'text', rect: { x: 0, y: 0, width: 60, height: 20 }, text: 'one two three four five six seven', fontSize: 12 },
+    ])
+    expect(problems.map((p) => [p.annotationId, p.severity])).toEqual([['emoji', 'warning'], ['long', 'warning']])
+    expect(problems[0].message).toContain('😀')
+    expect((await readAnnots(bytes)).dicts).toHaveLength(2)
+  })
+
+  it('keeps text upright on a rotated page', async () => {
+    const source = await makePdf([{ width: 612, height: 792, rotate: 90 }])
+    const { bytes } = await exportPdf(source, one({ ...base, id: 't', pageRotation: 90, type: 'text', rect: { x: 100, y: 200, width: 50, height: 30 }, text: 'Hi', fontSize: 10 }))
+    const { dicts } = await readAnnots(bytes)
+    expect(apText(dicts[0])).toContain('0 1 -1 0 150 200 cm')
+  })
+})
+
+describe('exportPdf edge cases', () => {
+  it('skips a pen annotation with no points without error or annotation object', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const { bytes, problems } = await exportPdf(source, [
+      { ...base, id: 'empty', type: 'pen', strokeWidth: 2, points: [] },
+      { ...base, id: 'ok', type: 'highlight', rect },
+    ])
+    expect(problems).toEqual([])
+    expect((await readAnnots(bytes)).dicts.map(nm)).toEqual(['ok'])
+  })
+
+  it('does not crash on emoji, CJK, curly quotes and tabs, and reports what was replaced', async () => {
+    const source = await makePdf([{ width: 612, height: 792 }])
+    const big = { x: 0, y: 0, width: 400, height: 200 }
+    const { bytes, problems } = await exportPdf(source, [
+      { ...base, id: 'cjk', type: 'text', rect: big, text: '日本語 \u{1F600}', fontSize: 12 },
+      { ...base, id: 'quotes', type: 'text', rect: big, text: '\u201Cquoted\u201D \u2019s', fontSize: 12 },
+      { ...base, id: 'tab', type: 'text', rect: big, text: 'a\tb', fontSize: 12 },
+    ])
+    expect(problems.map((p) => [p.annotationId, p.severity])).toEqual([['cjk', 'warning'], ['tab', 'warning']])
+    expect(problems[0].message).toContain('日')
+    const { dicts } = await readAnnots(bytes)
+    expect(dicts).toHaveLength(3)
+    expect(apText(dicts[1])).toContain('\\223quoted\\224')
+    expect(apText(dicts[2])).toContain('(a b)')
+  })
+
+  it('appends to a page whose original file already has annotations', async () => {
+    const doc = await PDFDocument.create()
+    const page = doc.addPage([612, 792])
+    const link = doc.context.register(doc.context.obj({ Type: 'Annot', Subtype: 'Link', Rect: [0, 0, 10, 10] }))
+    page.node.set(PDFName.of('Annots'), doc.context.obj([link]))
+    const source = await doc.save()
+    const { bytes } = await exportPdf(source, one({ ...base, id: 'n', type: 'highlight', rect }))
+    const { dicts } = await readAnnots(bytes)
+    expect(dicts.map(subtype)).toEqual(['Link', 'Highlight'])
+  })
+})

@@ -35,7 +35,7 @@ Five units with narrow interfaces:
 2. **`model`**: annotation data and store. Each annotation has an ID, page index, type, geometry in **PDF units** (points, origin bottom-left), and style (color, opacity, stroke width, font size). Operations: add, update, delete, reorder, plus undo and redo. No UI or PDF code.
 3. **`editor-ui`**: page view, interactive SVG overlay on each page canvas, toolbar and properties panel. Converts between screen pixels and PDF units for the current zoom. Reads and writes only `model`.
 4. **`shapes`**: pure functions turning one annotation into PDF drawing instructions (a content-stream string plus bounding box). Shared by every export approach.
-5. **`pdf-export`**: `exportPdf(originalBytes, annotations) -> Uint8Array`. Builds a native annotation dictionary and appearance stream per annotation using `shapes`, and writes the annotation ID into `/NM`.
+5. **`pdf-export`**: `exportPdf(originalBytes, annotations) -> { bytes: Uint8Array; problems: ExportProblem[] }`. Builds a native annotation dictionary and appearance stream per annotation using `shapes`, and writes the annotation ID into `/NM`.
 
 **Data flow:** upload -> `pdf-render` shows pages -> user draws -> `model` updates -> overlay redraws. Download -> `exportPdf(original bytes, model)` -> file saved. The uploaded bytes are never modified; export always starts from them.
 
