@@ -23,6 +23,24 @@ export function toLoadError(e: unknown): PdfLoadError {
   return new PdfLoadError('unknown', 'Could not open this file.')
 }
 
+/** Browsers silently blank canvases past a size limit (iOS Safari is ~16.7M pixels). */
+export const MAX_CANVAS_PIXELS = 16_777_216
+
+/**
+ * The scale to rasterize at: `scale * dpr`, capped so the backing store stays within
+ * MAX_CANVAS_PIXELS. Since the cap only ever lowers the product, the dpr factor shrinks first
+ * and `scale` itself only when even dpr 1 would be too big. `pageWidth`/`pageHeight` are the
+ * page's size at scale 1.
+ */
+export function effectiveRenderScale(pageWidth: number, pageHeight: number, scale: number, dpr: number): number {
+  const wanted = (Number.isFinite(scale) && scale > 0 ? scale : 1) * (Number.isFinite(dpr) && dpr > 0 ? dpr : 1)
+  const area = pageWidth * pageHeight
+  if (!(Number.isFinite(area) && area > 0)) return wanted
+  // Shave a hair so flooring the dimensions can never land above the cap.
+  const cap = Math.sqrt(MAX_CANVAS_PIXELS / area) * 0.9999
+  return Math.min(wanted, cap)
+}
+
 export interface PdfPageHandle {
   index: number
   geometry: PageGeometry
@@ -55,11 +73,13 @@ export async function openPdf(bytes: Uint8Array): Promise<PdfDocumentHandle> {
       geometry: { view: [x0, y0, x1, y1], rotate: normalizeRotation(page.rotate) },
       render(canvas, scale) {
         const dpr = window.devicePixelRatio || 1
-        const viewport = page.getViewport({ scale: scale * dpr })
+        const base = page.getViewport({ scale: 1 })
+        const viewport = page.getViewport({ scale: effectiveRenderScale(base.width, base.height, scale, dpr) })
         canvas.width = Math.floor(viewport.width)
         canvas.height = Math.floor(viewport.height)
-        canvas.style.width = `${viewport.width / dpr}px`
-        canvas.style.height = `${viewport.height / dpr}px`
+        // CSS size always follows the requested scale, even if the backing store was capped.
+        canvas.style.width = `${base.width * scale}px`
+        canvas.style.height = `${base.height * scale}px`
         const task = page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport })
         return {
           promise: task.promise.catch((e: unknown) => {

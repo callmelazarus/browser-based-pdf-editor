@@ -27,6 +27,25 @@ test('renders only pages near the viewport in a long document', async ({ page })
   expect(await renderedCanvasCount(page)).toBeLessThan(12)
 })
 
+test('prefetches pages just below the visible scroller but not far ones', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 400 })
+  const pdf = await makePdf(Array.from({ length: 120 }, () => ({ width: 612, height: 792 })))
+  await openPdfInApp(page, pdf)
+  // Distance of each page's top edge below the scroller's bottom edge (no scrolling).
+  const gaps = await page.evaluate(() => {
+    const bottom = document.querySelector('.pages')!.getBoundingClientRect().bottom
+    return [...Array(6).keys()].map(
+      (i) => document.querySelector(`[data-testid="page-${i}"]`)!.getBoundingClientRect().top - bottom,
+    )
+  })
+  const near = gaps.findIndex((g) => g >= 400 && g <= 700)
+  const far = gaps.findIndex((g) => g > 1500)
+  expect(near, `gaps ${gaps}`).toBeGreaterThan(0)
+  expect(far).toBeGreaterThan(near)
+  await expect.poll(() => canvasWidth(page, near)).toBeGreaterThan(0)
+  expect(await canvasWidth(page, far)).toBe(0)
+})
+
 test.describe('bad uploads', () => {
   test('rejects a file that is not a PDF', async ({ page }) => {
     await uploadFile(page, 'notes.pdf', Buffer.from('hello, I am not a pdf'))

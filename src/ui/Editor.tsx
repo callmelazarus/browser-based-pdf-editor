@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { viewportSize } from '../coords/page-space'
 import type { OpenFile } from './open-file'
 import { PageView } from './PageView'
@@ -6,7 +6,13 @@ import { nextZoom } from './zoom'
 
 export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void }) {
   const [scale, setScale] = useState(1)
-  const pagesRef = useRef<HTMLDivElement>(null)
+  const pagesRef = useRef<HTMLDivElement | null>(null)
+  // State (not just a ref) so pages create their observers once the scroller exists.
+  const [pagesEl, setPagesEl] = useState<HTMLDivElement | null>(null)
+  const setPagesRef = useCallback((el: HTMLDivElement | null) => {
+    pagesRef.current = el
+    setPagesEl(el)
+  }, [])
 
   function fitWidth() {
     const el = pagesRef.current
@@ -29,9 +35,12 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
           <button className="button" data-testid="fit-width" onClick={fitWidth}>Fit width</button>
         </div>
       </header>
-      <div className="pages" ref={pagesRef}>
+      <div
+        className="pages"
+        ref={setPagesRef}
+      >
         {file.doc.pages.map((p) => (
-          <PageView key={p.index} page={p} scale={scale} />
+          <PageView key={p.index} page={p} scale={scale} root={pagesEl} />
         ))}
       </div>
     </div>

@@ -3,7 +3,22 @@ import { viewportSize } from '../coords/page-space'
 import type { PdfPageHandle } from '../render/pdf-document'
 
 /** Reserves the page's full size, but only holds canvas memory while near the viewport. */
-export function PageView({ page, scale, children }: { page: PdfPageHandle; scale: number; children?: ReactNode }) {
+export function PageView({
+  page,
+  scale,
+  root,
+  children,
+}: {
+  page: PdfPageHandle
+  scale: number
+  /**
+   * The scroll container the page lives in. rootMargin only expands the observer's root, so
+   * inside an overflow:auto scroller it must be that scroller. `null` means "not mounted yet"
+   * (wait); `undefined` falls back to the browser viewport.
+   */
+  root?: HTMLElement | null
+  children?: ReactNode
+}) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [near, setNear] = useState(false)
@@ -11,11 +26,14 @@ export function PageView({ page, scale, children }: { page: PdfPageHandle; scale
 
   useEffect(() => {
     const el = wrapRef.current
-    if (!el) return
-    const io = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), { rootMargin: '800px 0px' })
+    if (!el || root === null) return
+    const io = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), {
+      root: root ?? null,
+      rootMargin: '800px 0px',
+    })
     io.observe(el)
     return () => io.disconnect()
-  }, [])
+  }, [root])
 
   useEffect(() => {
     const canvas = canvasRef.current
