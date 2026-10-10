@@ -47,9 +47,9 @@ describe('draftToAnnotation', () => {
     d = extendDraft(d, { x: 10.5, y: 10 })
     expect(draftToAnnotation(d, DEFAULT_STYLES.pen, 'p', 0, g0, 1)).toBeNull()
     d = extendDraft(d, { x: 20, y: 10 })
-    d = extendDraft(d, { x: 30, y: 10 })
+    d = extendDraft(d, { x: 30, y: 20 })
     const a = draftToAnnotation(d, DEFAULT_STYLES.pen, 'p', 0, g0, 1)
-    expect(a).toMatchObject({ type: 'pen', points: [{ x: 10, y: 782 }, { x: 20, y: 782 }, { x: 30, y: 782 }] })
+    expect(a).toMatchObject({ type: 'pen', points: [{ x: 10, y: 782 }, { x: 20, y: 782 }, { x: 30, y: 772 }] })
   })
 
   it('creates a default-size text box from a click and a sized one from a drag', () => {

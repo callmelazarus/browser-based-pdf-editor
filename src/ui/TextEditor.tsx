@@ -31,7 +31,7 @@ export function TextEditor({ annotation, geometry, scale, onCommit, onCancel }: 
       onChange={(e) => setValue(e.target.value)}
       onBlur={() => finish(true)}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !e.nativeEvent.isComposing) {
           e.stopPropagation()
           finish(false)
         }
@@ -40,7 +40,7 @@ export function TextEditor({ annotation, geometry, scale, onCommit, onCancel }: 
         position: 'absolute', left: r.x, top: r.y, width: r.width, height: r.height, boxSizing: 'border-box',
         padding: TEXT_PADDING * scale, fontFamily: 'Helvetica, Arial, sans-serif', fontSize: annotation.fontSize * scale,
         lineHeight: LINE_HEIGHT, color: css(annotation.color), border: '1px dashed #2f7de1',
-        background: 'rgba(255,255,255,0.7)', resize: 'none', outline: 'none', overflow: 'hidden', margin: 0,
+        background: 'rgba(255,255,255,0.7)', pointerEvents: 'auto', resize: 'none', outline: 'none', overflow: 'hidden', margin: 0,
       }}
     />
   )

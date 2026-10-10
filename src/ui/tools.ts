@@ -2,6 +2,7 @@ import {
   viewportRectToUser, viewportToUser, type PageGeometry,
 } from '../coords/page-space'
 import type { Annotation, AnnotationType, Point, Rect, Rgb } from '../model/types'
+import { simplifyStroke } from './pen'
 
 export type DrawTool = AnnotationType
 export type Tool = 'select' | DrawTool
@@ -27,7 +28,10 @@ export const DEFAULT_STYLES: ToolStyles = {
 export const MIN_DRAG_PX = 4
 export const DEFAULT_TEXT_SIZE = { width: 160, height: 48 }
 
-/** A gesture in progress. All coordinates are viewport pixels (top-left origin). */
+/**
+ * A gesture in progress. All coordinates are viewport pixels (top-left origin).
+ * For the pen, `points` is a mutable per-gesture buffer shared across the drafts of one gesture.
+ */
 export interface Draft { tool: DrawTool; start: Point; current: Point; points: Point[] }
 
 export const beginDraft = (tool: DrawTool, p: Point): Draft => ({ tool, start: p, current: p, points: [p] })
@@ -35,8 +39,8 @@ export const beginDraft = (tool: DrawTool, p: Point): Draft => ({ tool, start: p
 export function extendDraft(d: Draft, p: Point): Draft {
   if (d.tool !== 'pen') return { ...d, current: p }
   const last = d.points[d.points.length - 1]
-  const far = Math.hypot(p.x - last.x, p.y - last.y) >= 1.5
-  return { ...d, current: p, points: far ? [...d.points, p] : d.points }
+  if (Math.hypot(p.x - last.x, p.y - last.y) >= 1.5) d.points.push(p)
+  return { ...d, current: p }
 }
 
 function normalizedRect(a: Point, b: Point): Rect {
@@ -45,6 +49,8 @@ function normalizedRect(a: Point, b: Point): Rect {
 
 export function draftToAnnotation(
   d: Draft, style: StyleDefaults, id: string, page: number, g: PageGeometry, scale: number,
+  /** Simplify pen strokes to a bounded point list. Off for the cheap live preview. */
+  simplify = true,
 ): Annotation | null {
   const base = { id, page, pageRotation: g.rotate, color: style.color, opacity: style.opacity }
   const dx = Math.abs(d.current.x - d.start.x)
@@ -61,7 +67,10 @@ export function draftToAnnotation(
     }
     case 'pen':
       if (d.points.length < 2) return null
-      return { ...base, type: 'pen', points: d.points.map(toUser), strokeWidth: style.strokeWidth }
+      return {
+        ...base, type: 'pen', strokeWidth: style.strokeWidth,
+        points: (simplify ? simplifyStroke(d.points) : d.points).map(toUser),
+      }
     case 'line':
     case 'arrow':
       if (Math.hypot(dx, dy) < MIN_DRAG_PX) return null

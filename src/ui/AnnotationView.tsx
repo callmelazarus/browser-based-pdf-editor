@@ -1,19 +1,61 @@
-import type { ReactNode } from 'react'
+import type { PointerEvent, ReactNode } from 'react'
 import { rectToViewport, userToViewport, type PageGeometry } from '../coords/page-space'
 import type { Annotation, Rect } from '../model/types'
 import { arrowHeadLength, arrowHeadPoints } from '../shapes/geometry'
 import { layoutTextBox, TEXT_PADDING } from '../text/layout'
 import { css } from './color'
 
-interface Props { annotation: Annotation; geometry: PageGeometry; scale: number; hidden?: boolean }
+interface Props {
+  annotation: Annotation
+  geometry: PageGeometry
+  scale: number
+  hidden?: boolean
+  /** The in-progress draft: rendered with a distinct test id so it never counts as an annotation. */
+  preview?: boolean
+  /** In the select tool, annotations capture pointer events and show a generous hit area. */
+  interactive?: boolean
+  onPointerDown?: (e: PointerEvent<SVGGElement>) => void
+}
 
-export function AnnotationView({ annotation, geometry, scale, hidden }: Props) {
+export function AnnotationView({ annotation, geometry, scale, hidden, preview, interactive, onPointerDown }: Props) {
   if (hidden) return null
   return (
-    <g data-annotation-id={annotation.id} data-testid={`annotation-${annotation.type}`}>
+    <g
+      data-annotation-id={preview ? undefined : annotation.id}
+      data-testid={`${preview ? 'draft' : 'annotation'}-${annotation.type}`}
+      style={{
+        pointerEvents: interactive ? 'auto' : 'none',
+        cursor: interactive ? 'move' : undefined,
+        touchAction: interactive ? 'none' : undefined,
+      }}
+      onPointerDown={onPointerDown}
+    >
       {renderBody(annotation, geometry, scale)}
+      {interactive && renderHit(annotation, geometry, scale)}
     </g>
   )
+}
+
+/** Invisible shapes that make thin strokes easy to click. */
+function renderHit(a: Annotation, g: PageGeometry, s: number): ReactNode {
+  const hitWidth = (sw: number) => Math.max(12, sw * s)
+  switch (a.type) {
+    case 'line':
+    case 'arrow': {
+      const f = userToViewport(g, s, a.from)
+      const t = userToViewport(g, s, a.to)
+      return <line x1={f.x} y1={f.y} x2={t.x} y2={t.y} stroke="transparent" strokeWidth={hitWidth(a.strokeWidth)} strokeLinecap="round" />
+    }
+    case 'pen':
+      return (
+        <polyline
+          points={a.points.map((p) => userToViewport(g, s, p)).map((p) => `${p.x},${p.y}`).join(' ')}
+          fill="none" stroke="transparent" strokeWidth={hitWidth(a.strokeWidth)} strokeLinecap="round" strokeLinejoin="round"
+        />
+      )
+    default:
+      return <rect {...rectToViewport(g, s, a.rect)} fill="transparent" />
+  }
 }
 
 function renderBody(a: Annotation, g: PageGeometry, s: number): ReactNode {
