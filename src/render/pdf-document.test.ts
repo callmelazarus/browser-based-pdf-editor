@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { effectiveRenderScale, MAX_CANVAS_PIXELS, PdfLoadError, toLoadError } from './pdf-document'
+import { effectiveRenderScale, MAX_CANVAS_PIXELS, PdfLoadError, pdfjsAssetOptions, toLoadError } from './pdf-document'
 
 describe('toLoadError', () => {
   it('maps a pdf.js password exception', () => {
@@ -54,5 +54,16 @@ describe('effectiveRenderScale', () => {
       expect(bad).toBeGreaterThan(0)
       expect(Number.isFinite(bad)).toBe(true)
     }
+  })
+})
+
+describe('pdfjsAssetOptions', () => {
+  it('points every decoder asset at a same-origin, slash-terminated path under the base', () => {
+    expect(pdfjsAssetOptions('/app/')).toEqual({
+      wasmUrl: '/app/pdfjs/wasm/', cMapUrl: '/app/pdfjs/cmaps/', cMapPacked: true,
+      standardFontDataUrl: '/app/pdfjs/standard_fonts/', iccUrl: '/app/pdfjs/iccs/',
+    })
+    expect(pdfjsAssetOptions('/').wasmUrl).toBe('/pdfjs/wasm/')
+    expect(pdfjsAssetOptions('/x').wasmUrl).toBe('/x/pdfjs/wasm/')
   })
 })

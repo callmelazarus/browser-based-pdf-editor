@@ -1,23 +1,23 @@
 {
   "name": "pdf-annotator",
   "version": "1.0.0",
-  "description": "",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Annotate PDFs in the browser; the file never leaves your device.",
   "scripts": {
     "test": "vitest run",
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "^22.12.0 || ^24.0.0 || >=26.0.0"
+  },
   "dependencies": {
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",

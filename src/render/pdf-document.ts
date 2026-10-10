@@ -62,10 +62,26 @@ export interface PdfDocumentHandle {
   destroy(): void
 }
 
+/**
+ * pdf.js loads its decoders (CCITT/JBIG2/JPX wasm), CMaps, standard fonts and ICC profiles by URL.
+ * They are copied into public/pdfjs/ at build time (scripts/copy-pdfjs-assets.mjs) and served
+ * same-origin: the PDF and the app must never reach a third-party host.
+ */
+export function pdfjsAssetOptions(base: string = import.meta.env.BASE_URL) {
+  const root = `${base.endsWith('/') ? base : `${base}/`}pdfjs/`
+  return {
+    wasmUrl: `${root}wasm/`,
+    cMapUrl: `${root}cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${root}standard_fonts/`,
+    iccUrl: `${root}iccs/`,
+  }
+}
+
 export async function openPdf(bytes: Uint8Array): Promise<PdfDocumentHandle> {
   // pdf.js transfers the buffer to its worker, so hand it a copy.
   // pdfjs-dist v6 has no PDFDocumentProxy.destroy(); the loading task owns teardown.
-  const task = pdfjs.getDocument({ data: bytes.slice() })
+  const task = pdfjs.getDocument({ data: bytes.slice(), ...pdfjsAssetOptions() })
   let doc: pdfjs.PDFDocumentProxy
   try {
     doc = await task.promise

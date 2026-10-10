@@ -4,6 +4,8 @@ A browser-based tool for marking up PDFs. Open a PDF, add highlights, underlines
 
 ## Develop
 
+Requires Node `^22.12.0 || ^24.0.0 || >=26.0.0` (Vitest 5's range, which is stricter than Vite 8's `^20.19.0 || >=22.12.0`).
+
     npm install
     npm run dev          # http://localhost:5173
     npm test             # unit tests (Vitest)
@@ -16,7 +18,7 @@ A browser-based tool for marking up PDFs. Open a PDF, add highlights, underlines
 - `src/coords`: conversion between PDF user space and screen pixels (page rotation, crop box, zoom).
 - `src/shapes`: turns each annotation into PDF drawing operators (an appearance stream).
 - `src/export`: writes native annotation objects plus appearance streams with pdf-lib.
-- `src/render`, `src/ui`: pdf.js page rendering and the React editor.
+- `src/render`, `src/ui`: pdf.js page rendering and the React editor. pdf.js's decoders (scanned-image wasm), CMaps, standard fonts and ICC profiles are copied from `node_modules` into `public/pdfjs/` by `scripts/copy-pdfjs-assets.mjs` (run automatically before `dev` and `build`) and served from the same origin, so no third-party request is ever made.
 
 The original upload is never modified; each download is built from the original bytes plus the current annotations.
 
