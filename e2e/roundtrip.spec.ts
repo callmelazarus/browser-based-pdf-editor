@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { TEXT_PADDING } from '../src/text/layout'
 import { makePdf, type PageSpec } from '../tests/helpers/makePdf'
 import { darkBounds, downloadAnnotated, dragOnPage, openPdfInApp, pixelAt, rowsMatching, waitForPaint } from './helpers'
 
@@ -70,17 +71,28 @@ test('underline and strikethrough lie along the dragged rectangle on a page rota
   expect(isRed(await pixelAt(reopened, 0, 290, under[0]))).toBe(false)
 })
 
-test('text stays upright on a rotated page', async ({ page }) => {
-  const reopened = await annotateAndReopen(page, { width: 612, height: 792, rotate: 90 }, async (p) => {
-    await p.getByTestId('tool-text').click()
-    await dragOnPage(p, [100, 400], [400, 460])
-    await p.getByTestId('text-editor').fill('HELLO')
-    await p.getByTestId('tool-select').click()
+for (const rotate of [90, 180, 270] as const) {
+  test(`text starts at the top-left of its box and reads upright on a page rotated ${rotate}`, async ({ page }) => {
+    const box = { x: 100, y: 400, width: 300, height: 60 }
+    const fontSize = 14 // the default text size
+    const reopened = await annotateAndReopen(page, { width: 612, height: 792, rotate }, async (p) => {
+      await p.getByTestId('tool-text').click()
+      await dragOnPage(p, [box.x, box.y], [box.x + box.width, box.y + box.height])
+      await p.getByTestId('text-editor').fill('HELLO')
+      await p.getByTestId('tool-select').click()
+    })
+    const ink = await darkBounds(reopened, 0, box)
+    expect(ink).not.toBeNull()
+    expect(ink!.width).toBeGreaterThan(ink!.height)
+    // Upright, unmirrored text on one line starts in the top-left corner of the box: the first
+    // glyph is at the left padding and the ink sits in the top half. Upside-down text would put
+    // it at the bottom-right, mirrored text at the right edge.
+    expect(ink!.x).toBeLessThanOrEqual(TEXT_PADDING + 4)
+    expect(ink!.y).toBeLessThanOrEqual(TEXT_PADDING + fontSize)
+    expect(ink!.y + ink!.height).toBeLessThanOrEqual(box.height / 2)
+    expect(ink!.x + ink!.width).toBeLessThan(box.width / 2)
   })
-  const ink = await darkBounds(reopened, 0, { x: 100, y: 400, width: 300, height: 60 })
-  expect(ink).not.toBeNull()
-  expect(ink!.width).toBeGreaterThan(ink!.height)
-})
+}
 
 test('annotating an already annotated PDF keeps the earlier annotations', async ({ page }) => {
   // `first` is the app showing the first export; annotate it again and export a second generation.

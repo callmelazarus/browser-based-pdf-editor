@@ -66,10 +66,10 @@ export function pixelAt(page: Page, index: number, x: number, y: number): Promis
   )
 }
 
-/** Bounding box (CSS px) of dark pixels inside a region of a page canvas, or null if there are none. */
+/** Bounding box (CSS px) of dark pixels inside a region of a page canvas, with x/y relative to the region's top-left, or null if there are none. */
 export function darkBounds(
   page: Page, index: number, region: { x: number; y: number; width: number; height: number },
-): Promise<{ width: number; height: number } | null> {
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
   return page.evaluate(
     ({ index, region }) => {
       const canvas = document.querySelector<HTMLCanvasElement>(`[data-testid="page-canvas-${index}"]`)!
@@ -85,7 +85,7 @@ export function darkBounds(
           }
         }
       }
-      return x1 < 0 ? null : { width: (x1 - x0 + 1) / dpr, height: (y1 - y0 + 1) / dpr }
+      return x1 < 0 ? null : { x: x0 / dpr, y: y0 / dpr, width: (x1 - x0 + 1) / dpr, height: (y1 - y0 + 1) / dpr }
     },
     { index, region },
   )
