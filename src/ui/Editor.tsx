@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { viewportSize } from '../coords/page-space'
+import { exportPdf, type ExportProblem } from '../export/export-pdf'
 import { createStore } from '../model/store'
+import type { Annotation } from '../model/types'
+import { annotatedFileName, downloadBytes } from './download'
 import type { OpenFile } from './open-file'
 import { Overlay } from './Overlay'
 import { PageView } from './PageView'
@@ -13,11 +16,48 @@ import { nextZoom } from './zoom'
 
 export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void }) {
   const [store] = useState(() => createStore())
-  const { annotations, selectedId, canUndo, canRedo } = useStoreState(store)
+  const { annotations, selectedId, canUndo, canRedo, revision } = useStoreState(store)
   const [tool, setTool] = useState<Tool>('select')
   const [styles, setStyles] = useState<ToolStyles>(DEFAULT_STYLES)
   const [scale, setScale] = useState(1)
   const pagesRef = useRef<HTMLDivElement | null>(null)
+  const [savedRevision, setSavedRevision] = useState(0)
+  const [problems, setProblems] = useState<string[]>([])
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const dirty = revision !== savedRevision
+
+  async function handleDownload() {
+    setExporting(true)
+    setExportError(null)
+    setProblems([])
+    try {
+      // Always from the original upload, never a previous export.
+      const result = await exportPdf(file.bytes, annotations)
+      setProblems(result.problems.map((p) => describeProblem(p, annotations)))
+      downloadBytes(result.bytes, annotatedFileName(file.name))
+      setSavedRevision(revision)
+    } catch (e) {
+      setExportError(`Could not create the PDF: ${e instanceof Error && e.message ? e.message : 'unknown error.'}`)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  function handleClose() {
+    if (dirty && !window.confirm('You have annotations that have not been downloaded. Open another file anyway?')) return
+    onClose()
+  }
+
+  useEffect(() => {
+    if (!dirty) return
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [dirty])
   // State (not just a ref) so pages create their observers once the scroller exists.
   const [pagesEl, setPagesEl] = useState<HTMLDivElement | null>(null)
   const setPagesRef = useCallback((el: HTMLDivElement | null) => {
@@ -89,11 +129,14 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
   return (
     <div className="editor">
       <header className="topbar">
-        <button className="button" onClick={onClose}>Open another file</button>
+        <button className="button" onClick={handleClose}>Open another file</button>
         <strong className="filename">{file.name}</strong>
         <Toolbar tool={tool} onTool={chooseTool} />
         <button className="button" data-testid="undo-button" disabled={!canUndo} onClick={() => store.undo()}>Undo</button>
         <button className="button" data-testid="redo-button" disabled={!canRedo} onClick={() => store.redo()}>Redo</button>
+        <button className="button primary" data-testid="download-button" disabled={exporting} onClick={() => void handleDownload()}>
+          {exporting ? 'Preparing…' : 'Download PDF'}
+        </button>
         <span className="spacer" />
         <div className="zoom">
           <button className="button" data-testid="zoom-out" onClick={() => setScale((s) => nextZoom(s, -1))}>−</button>
@@ -102,6 +145,23 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
           <button className="button" data-testid="fit-width" onClick={fitWidth}>Fit width</button>
         </div>
       </header>
+      {(problems.length > 0 || exportError) && (
+        <div className="banner" role={exportError ? 'alert' : 'status'} data-testid="export-report">
+          {exportError ? (
+            <p data-testid="export-error">{exportError}</p>
+          ) : (
+            <>
+              <p>Downloaded, with {problems.length} {problems.length === 1 ? 'issue' : 'issues'}:</p>
+              <ul data-testid="export-problems">
+                {problems.map((text, i) => (
+                  <li key={i}>{text}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <button className="button" onClick={() => { setProblems([]); setExportError(null) }}>Dismiss</button>
+        </div>
+      )}
       <div className="workspace">
         <div className="pages" ref={setPagesRef}>
           {file.doc.pages.map((p) => (
@@ -125,4 +185,12 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
       </div>
     </div>
   )
+}
+
+/** "Page 2, text box 3: message" - the ordinal counts same-type annotations on that page in drawing order. */
+function describeProblem(p: ExportProblem, annotations: readonly Annotation[]): string {
+  const ann = annotations.find((a) => a.id === p.annotationId)
+  const sameKind = annotations.filter((a) => a.page === p.page && a.type === ann?.type)
+  const who = ann ? `${ann.type === 'text' ? 'text box' : ann.type} ${sameKind.indexOf(ann) + 1}` : 'annotation'
+  return `Page ${p.page + 1}, ${who}: ${p.message}`
 }

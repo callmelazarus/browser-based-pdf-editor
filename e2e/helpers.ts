@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { expect, type Page } from '@playwright/test'
 
 export async function uploadFile(page: Page, name: string, bytes: Uint8Array | Buffer) {
@@ -42,4 +43,9 @@ export function storedAnnotations(page: Page) {
     const store = (window as unknown as { __annotationStore?: { getState(): { annotations: unknown[] } } }).__annotationStore
     return (store?.getState().annotations ?? []) as Array<Record<string, any>>
   })
+}
+
+export async function downloadAnnotated(page: Page): Promise<Uint8Array> {
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('download-button').click()])
+  return new Uint8Array(await readFile((await download.path())!))
 }
