@@ -60,6 +60,18 @@ describe('annotation store', () => {
     expect(s.getState().annotations[0].opacity).toBe(0.5)
   })
 
+  it('selecting another annotation ends the coalescing run', () => {
+    const s = createStore([rect('a', 0.5), rect('b', 0.5)])
+    s.update('a', { opacity: 0.6 }, 'opacity')
+    s.select('b')
+    s.select('a')
+    s.update('a', { opacity: 0.7 }, 'opacity')
+    s.undo()
+    expect(s.getState().annotations[0].opacity).toBe(0.6)
+    s.undo()
+    expect(s.getState().annotations[0].opacity).toBe(0.5)
+  })
+
   it('does not coalesce updates with different keys', () => {
     const s = createStore([rect('a', 0.5)])
     s.update('a', { opacity: 0.6 }, 'opacity')

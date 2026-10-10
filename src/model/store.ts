@@ -87,6 +87,7 @@ export function createStore(initial: List = []): AnnotationStore {
     select(id) {
       if (id === selectedId) return
       selectedId = id
+      lastCoalesce = null
       emit()
     },
     bringToFront(id) {
