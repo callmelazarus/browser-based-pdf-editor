@@ -67,3 +67,10 @@ export function handlePoint(b: Rect, h: Handle): Point {
   const y = h.includes('n') ? b.y : h.includes('s') ? b.y + b.height : b.y + b.height / 2
   return { x, y }
 }
+
+/** Moves an annotation by the viewport-space drag from `startV` to `curV`, on a page with any rotation/crop. */
+export function moveByViewportDelta(a: Annotation, startV: Point, curV: Point, g: PageGeometry, scale: number): Annotation {
+  const from = viewportToUser(g, scale, startV)
+  const to = viewportToUser(g, scale, curV)
+  return translateAnnotation(a, to.x - from.x, to.y - from.y)
+}

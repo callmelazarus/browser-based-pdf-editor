@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
-import { rectToViewport, userToViewport, viewportSize, viewportToUser, type PageGeometry } from '../coords/page-space'
+import { rectToViewport, userToViewport, viewportSize, type PageGeometry } from '../coords/page-space'
 import type { AnnotationStore } from '../model/store'
 import { isRectAnnotation, type Annotation, type Point, type TextAnnotation } from '../model/types'
 import { AnnotationView } from './AnnotationView'
 import { TextEditor } from './TextEditor'
 import { beginDraft, draftToAnnotation, extendDraft, type Draft, type Tool, type ToolStyles } from './tools'
 import {
-  HANDLES, handlePoint, moveEndpoint, resizeRectAnnotation, translateAnnotation, viewportBounds, type Handle,
+  HANDLES, handlePoint, moveByViewportDelta, moveEndpoint, resizeRectAnnotation, viewportBounds, type Handle,
 } from './transform'
 import { useStoreState } from './useStoreState'
 
@@ -113,9 +113,7 @@ export function Overlay({ pageIndex, geometry, scale, tool, styles, store }: Pro
 
   function computeDrag(d: Drag, p: Point): Annotation {
     if (d.mode === 'move') {
-      const a = viewportToUser(geometry, scale, d.startV)
-      const b = viewportToUser(geometry, scale, p)
-      return translateAnnotation(d.original, b.x - a.x, b.y - a.y)
+      return moveByViewportDelta(d.original, d.startV, p, geometry, scale)
     }
     if (d.mode === 'resize' && isRectAnnotation(d.original) && d.handle) {
       return resizeRectAnnotation(d.original, d.handle, d.startV, p, geometry, scale)

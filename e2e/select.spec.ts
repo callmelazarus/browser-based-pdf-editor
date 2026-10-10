@@ -131,3 +131,37 @@ test('annotation shapes stay interactive while the overlay itself is pass-throug
   })
   expect(hit).toEqual({ onShape: true, emptyIsSvg: false })
 })
+
+test('the font-size field accepts typed values, clamps on blur and reverts when emptied', async ({ page }) => {
+  await page.getByTestId('tool-text').click()
+  await dragOnPage(page, [100, 400], [300, 460])
+  await page.getByTestId('text-editor').fill('Sized')
+  await page.getByTestId('tool-select').click()
+  await page.getByTestId('annotation-text').click({ position: { x: 100, y: 30 } })
+  const field = page.getByTestId('prop-fontsize')
+  const size = async () => (await storedAnnotations(page))[0].fontSize
+  expect(await size()).toBe(14)
+
+  await field.click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type('24')
+  await expect(field).toHaveValue('24')
+  expect(await size()).toBe(24)
+
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type('200')
+  await field.blur()
+  await expect(field).toHaveValue('72')
+  expect(await size()).toBe(72)
+
+  await field.click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.press('Backspace')
+  await field.blur()
+  await expect(field).toHaveValue('72')
+  expect(await size()).toBe(72)
+
+  // the whole typing run is a single undo step
+  await page.getByTestId('undo-button').click()
+  expect(await size()).toBe(14)
+})

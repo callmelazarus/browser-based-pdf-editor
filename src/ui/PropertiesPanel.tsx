@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { AnnotationType } from '../model/types'
 import { hexToRgb, rgbToHex, SWATCHES } from './color'
 import { controlsFor } from './style'
@@ -55,15 +56,53 @@ export function PropertiesPanel({ type, style, hasSelection, onChange, onBringTo
       {show.fontSize && (
         <label className="field">
           <span>Font size</span>
-          <input
-            type="number" data-testid="prop-fontsize" min={8} max={72} value={style.fontSize}
-            onChange={(e) => onChange({ fontSize: Math.min(72, Math.max(8, Number(e.target.value) || 14)) }, 'fontSize')}
-          />
+          <FontSizeInput value={style.fontSize} onChange={(v) => onChange({ fontSize: v }, 'fontSize')} />
         </label>
       )}
       {hasSelection && (
         <button className="button" data-testid="bring-front" onClick={onBringToFront}>Bring to front</button>
       )}
     </aside>
+  )
+}
+
+const FONT_MIN = 8
+const FONT_MAX = 72
+
+/**
+ * Keeps the raw text while typing so intermediate values ("1" on the way to "12") are allowed.
+ * Valid values are committed as you type; blur or Enter clamps, and empty/invalid reverts.
+ */
+function FontSizeInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [text, setText] = useState(String(value))
+  const [seen, setSeen] = useState(value)
+  // Resync when the stored value changes from elsewhere (undo/redo, another annotation).
+  if (seen !== value) {
+    setSeen(value)
+    if (Number(text) !== value) setText(String(value))
+  }
+  const finish = () => {
+    const n = Number(text)
+    if (text.trim() === '' || !Number.isFinite(n)) {
+      setText(String(value))
+      return
+    }
+    const clamped = Math.min(FONT_MAX, Math.max(FONT_MIN, n))
+    setText(String(clamped))
+    if (clamped !== value) onChange(clamped)
+  }
+  return (
+    <input
+      type="number" data-testid="prop-fontsize" min={FONT_MIN} max={FONT_MAX} value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        const n = Number(e.target.value)
+        if (e.target.value.trim() !== '' && Number.isFinite(n) && n >= FONT_MIN && n <= FONT_MAX) onChange(n)
+      }}
+      onBlur={finish}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') finish()
+      }}
+    />
   )
 }

@@ -112,6 +112,7 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
         </div>
         {panelType && panelStyle ? (
           <PropertiesPanel
+            key={selected?.id ?? panelType}
             type={panelType}
             style={panelStyle}
             hasSelection={!!selected}
