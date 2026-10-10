@@ -194,4 +194,21 @@ describe('QuadPoints on rotated pages', () => {
     expect(apText(dicts[0]!)).toContain('0 1 m')
     expect(dicts[0]!.lookup(PDFName.of('QuadPoints'))!.toString()).toContain('110 20 110 70 ]')
   })
+
+  it('does not leak an annotation onto another page that shares the same indirect /Annots array', async () => {
+    const src = await PDFDocument.create()
+    const p1 = src.addPage([200, 200])
+    const p2 = src.addPage([200, 200])
+    const existing = src.context.register(src.context.obj({ Type: 'Annot', Subtype: 'Square', Rect: [0, 0, 10, 10], NM: PDFString.of('old') }))
+    const shared = src.context.register(src.context.obj([existing]))
+    p1.node.set(PDFName.of('Annots'), shared)
+    p2.node.set(PDFName.of('Annots'), shared)
+    const source = await src.save()
+
+    const { bytes } = await exportPdf(source, one({ ...base, id: 'new', type: 'rectangle', strokeWidth: 2, rect }))
+    const first = (await readAnnots(bytes, 0)).dicts.map(nm)
+    const second = (await readAnnots(bytes, 1)).dicts.map(nm)
+    expect(first).toEqual(['old', 'new'])
+    expect(second).toEqual(['old'])
+  })
 })

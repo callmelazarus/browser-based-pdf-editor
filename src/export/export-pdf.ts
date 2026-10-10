@@ -30,6 +30,7 @@ export async function exportPdf(original: Uint8Array, annotations: readonly Anno
   const doc = await PDFDocument.load(original)
   const pages = doc.getPages()
   const problems: ExportProblem[] = []
+  const ownAnnots = new Set<PDFPage>()
   const font = annotations.some((a) => a.type === 'text') ? await doc.embedFont(StandardFonts.Helvetica) : null
   const getFontRef = (): PDFRef => {
     if (!font) throw new Error('Helvetica was not embedded')
@@ -43,6 +44,10 @@ export async function exportPdf(original: Uint8Array, annotations: readonly Anno
       // A pen stroke with no points has nothing to draw; writing it would leave a degenerate annotation.
       if (ann.type === 'pen' && ann.points.length === 0) continue
       problems.push(...textProblems(ann))
+      if (!ownAnnots.has(page)) {
+        giveOwnAnnots(doc, page)
+        ownAnnots.add(page)
+      }
       addAnnotation(doc, page, ann, getFontRef)
     } catch (e) {
       problems.push({
@@ -72,6 +77,15 @@ function textProblems(a: Annotation): ExportProblem[] {
     out.push({ annotationId: a.id, page: a.page, severity: 'warning', message: 'Text does not fit in its box and is clipped.' })
   }
   return out
+}
+
+/**
+ * Pages may share one indirect /Annots array; appending to it would put our annotation on every
+ * page that shares it. Give the page its own array holding copies of the existing entries.
+ */
+function giveOwnAnnots(doc: PDFDocument, page: PDFPage) {
+  const cur = page.node.Annots()
+  page.node.set(PDFName.of('Annots'), doc.context.obj(cur ? cur.asArray().slice() : []))
 }
 
 function addAnnotation(doc: PDFDocument, page: PDFPage, a: Annotation, getFontRef: () => PDFRef) {
