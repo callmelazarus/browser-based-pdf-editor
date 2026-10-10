@@ -18,7 +18,7 @@ const WHITESPACE = new Set(['\n', '\r', '\t'])
 
 export function findUnsupportedChars(text: string): string[] {
   const found = new Set<string>()
-  for (const ch of text) {
+  for (const ch of text.normalize('NFC')) {
     if (!WHITESPACE.has(ch) && winAnsiCode(ch) === null) found.add(ch)
   }
   return [...found]
@@ -26,7 +26,7 @@ export function findUnsupportedChars(text: string): string[] {
 
 export function sanitizeText(text: string): string {
   let out = ''
-  for (const ch of text.replace(/\r\n?/g, '\n')) {
+  for (const ch of text.normalize('NFC').replace(/\r\n?/g, '\n')) {
     if (ch === '\n') out += ch
     else if (ch === '\t') out += ' '
     else out += winAnsiCode(ch) === null ? '?' : ch

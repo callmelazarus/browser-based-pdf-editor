@@ -23,4 +23,16 @@ describe('winansi', () => {
     expect(toPdfLiteral('“')).toBe('(\\223)')
     expect(toPdfLiteral('€')).toBe('(\\200)')
   })
+
+  it('NFC-normalizes decomposed accents instead of reporting or replacing them', () => {
+    const decomposed = 'e\u0301 a\u0308'
+    expect(findUnsupportedChars(decomposed)).toEqual([])
+    expect(sanitizeText(decomposed)).toBe('\u00e9 \u00e4')
+  })
+
+  it('still replaces characters with no precomposed WinAnsi form, and agrees with findUnsupportedChars', () => {
+    const text = 'x\u0301 x\u0301 ok'
+    expect(findUnsupportedChars(text)).toEqual(['\u0301'])
+    expect(sanitizeText(text)).toBe('x? x? ok')
+  })
 })
