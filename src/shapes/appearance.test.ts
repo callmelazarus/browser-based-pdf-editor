@@ -1,5 +1,4 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import type { Annotation } from '../model/types'
 import { loadHelvetica } from '../text/helvetica'
 import { buildAppearance } from './appearance'
 
@@ -68,5 +67,54 @@ describe('buildAppearance', () => {
   it('emits a valid stream for empty text', () => {
     const ap = buildAppearance({ ...base, type: 'text', rect, text: '', fontSize: 12 })
     expect(ap.content).not.toContain('Tj')
+  })
+
+  it('draws the exact ellipse path on a non-square rect with a non-zero origin', () => {
+    // rect 10,20 100x40, w=2: c=(60,40), rx=(100-2)/2=49, ry=(40-2)/2=19
+    // K*rx=27.0619527 -> 27.062; K*ry=10.4934102 -> 10.4934
+    const ap = buildAppearance({ ...base, type: 'ellipse', strokeWidth: 2, rect: { x: 10, y: 20, width: 100, height: 40 } })
+    expect(ap.content).toBe([
+      '/GS0 gs', '1 0 0 RG', '2 w',
+      '109 40 m',
+      '109 50.4934 87.062 59 60 59 c',
+      '32.938 59 11 50.4934 11 40 c',
+      '11 29.5066 32.938 21 60 21 c',
+      '87.062 21 109 29.5066 109 40 c',
+      'h', 'S',
+    ].join('\n'))
+  })
+
+  it('does not produce NaN or throw for a degenerate ellipse', () => {
+    for (const r of [{ x: 5, y: 5, width: 0, height: 0 }, { x: 5, y: 5, width: 1, height: 1 }]) {
+      const ap = buildAppearance({ ...base, type: 'ellipse', strokeWidth: 2, rect: r })
+      expect(ap.content).not.toMatch(/NaN|Infinity/)
+      expect(ap.content.match(/ c$/gm)).toHaveLength(4)
+    }
+  })
+
+  it('wraps text onto lines whose Tm baselines are 1.2 * size apart', () => {
+    // frame 50x60 (rot 0), size 10: baseline0 = 2 + 8.5 = 10.5, then +12; y = 60 - baseline
+    const ap = buildAppearance({ ...base, type: 'text', rect: { x: 100, y: 200, width: 50, height: 60 }, text: 'hello world', fontSize: 10 })
+    expect(ap.content).toContain('1 0 0 1 100 200 cm')
+    expect(ap.content).toContain('1 0 0 1 2 49.5 Tm\n(hello) Tj')
+    expect(ap.content).toContain('1 0 0 1 2 37.5 Tm\n(world) Tj')
+  })
+
+  it.each([
+    // rect 100,200 50x30, size 10; Tm y = frame.height - 10.5
+    [0, '1 0 0 1 100 200 cm', '1 0 0 1 2 19.5 Tm'],
+    [90, '0 1 -1 0 150 200 cm', '1 0 0 1 2 39.5 Tm'],
+    [180, '-1 0 0 -1 150 230 cm', '1 0 0 1 2 19.5 Tm'],
+    [270, '0 -1 1 0 100 230 cm', '1 0 0 1 2 39.5 Tm'],
+  ] as const)('places text for page rotation %i', (rot, cm, tm) => {
+    const ap = buildAppearance({ ...base, pageRotation: rot, type: 'text', rect: { x: 100, y: 200, width: 50, height: 30 }, text: 'ab', fontSize: 10 })
+    expect(ap.content).toContain(`${cm}\nBT`)
+    expect(ap.content).toContain(`${tm}\n(ab) Tj`)
+  })
+
+  it('emits empty content and a zero bbox for a pen with no points', () => {
+    const ap = buildAppearance({ ...base, type: 'pen', strokeWidth: 3, points: [] })
+    expect(ap.content).toBe('')
+    expect(ap.bbox).toEqual([0, 0, 0, 0])
   })
 })

@@ -85,7 +85,9 @@ export function buildAppearance(a: Annotation): Appearance {
       return { ...base, bbox: padBounds(boundsOfPoints(pts), a.strokeWidth), content: ops.join('\n') }
     }
     case 'pen': {
-      const pts = a.points.length ? a.points : [{ x: 0, y: 0 }]
+      // No points: nothing to draw. Empty content and a zero-area bbox (the exporter must cope).
+      if (a.points.length === 0) return { ...base, bbox: [0, 0, 0, 0], content: '' }
+      const pts = a.points
       const ops = ['/GS0 gs', rgb(a.color, true), `${n(a.strokeWidth)} w`, '1 J', '1 j', `${pt(pts[0])} m`]
       if (pts.length === 1) ops.push(`${pt(pts[0])} l`)
       for (const p of pts.slice(1)) ops.push(`${pt(p)} l`)
