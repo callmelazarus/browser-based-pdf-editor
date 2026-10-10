@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { PDFDict, PDFDocument, PDFName, PDFStream, PDFString } from 'pdf-lib'
 import { makePdf } from '../../tests/helpers/makePdf'
 import type { Annotation } from '../model/types'
+import { makeEncryptedPdf } from '../../tests/helpers/makeEncryptedPdf'
 import { exportPdf } from './export-pdf'
 
 const base = { page: 0, pageRotation: 0 as const, color: { r: 1, g: 0, b: 0 }, opacity: 0.5 }
@@ -210,5 +211,12 @@ describe('QuadPoints on rotated pages', () => {
     const second = (await readAnnots(bytes, 1)).dicts.map(nm)
     expect(first).toEqual(['old', 'new'])
     expect(second).toEqual(['old'])
+  })
+
+  it('explains in plain words why an encrypted PDF cannot be exported', async () => {
+    const source = makeEncryptedPdf('', 'owner')
+    await expect(exportPdf(source, one({ ...base, id: 'a', type: 'rectangle', strokeWidth: 2, rect }))).rejects.toThrow(
+      'This PDF is protected and cannot be annotated here.',
+    )
   })
 })

@@ -1,10 +1,11 @@
 import * as pdfjs from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { PROTECTED_MESSAGE } from '../protected-message'
 import { normalizeRotation, type PageGeometry } from '../coords/page-space'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
-export type LoadErrorKind = 'password' | 'invalid' | 'unknown'
+export type LoadErrorKind = 'password' | 'protected' | 'invalid' | 'unknown'
 
 export class PdfLoadError extends Error {
   constructor(readonly kind: LoadErrorKind, message: string) {
@@ -21,6 +22,14 @@ export function toLoadError(e: unknown): PdfLoadError {
     return new PdfLoadError('invalid', "This file isn't a valid PDF.")
   }
   return new PdfLoadError('unknown', 'Could not open this file.')
+}
+
+/**
+ * pdf.js opens PDFs that have an owner password but an empty user password, yet pdf-lib cannot
+ * write them, so the user would annotate and then never be able to download. Reject them up front.
+ */
+export async function assertNotProtected(doc: { getPermissions(): Promise<unknown> }): Promise<void> {
+  if ((await doc.getPermissions()) !== null) throw new PdfLoadError('protected', PROTECTED_MESSAGE)
 }
 
 /** Browsers silently blank canvases past a size limit (iOS Safari is ~16.7M pixels). */
@@ -63,6 +72,12 @@ export async function openPdf(bytes: Uint8Array): Promise<PdfDocumentHandle> {
   } catch (e) {
     void task.destroy()
     throw toLoadError(e)
+  }
+  try {
+    await assertNotProtected(doc)
+  } catch (e) {
+    void task.destroy()
+    throw e
   }
   const pages: PdfPageHandle[] = []
   for (let i = 0; i < doc.numPages; i++) {

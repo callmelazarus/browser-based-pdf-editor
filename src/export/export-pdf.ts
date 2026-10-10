@@ -1,4 +1,5 @@
 import { PDFDocument, PDFHexString, PDFName, PDFPage, PDFRef, PDFString, StandardFonts } from 'pdf-lib'
+import { PROTECTED_MESSAGE } from '../protected-message'
 import { applyMatrix, screenFrame } from '../coords/frame'
 import type { Annotation } from '../model/types'
 import { buildAppearance } from '../shapes/appearance'
@@ -27,7 +28,14 @@ const SUBTYPES = {
 /** Never mutates `original`. Per-annotation failures are reported in `problems`; the rest are still written. */
 export async function exportPdf(original: Uint8Array, annotations: readonly Annotation[]): Promise<ExportResult> {
   await loadHelvetica()
-  const doc = await PDFDocument.load(original)
+  let doc: PDFDocument
+  try {
+    doc = await PDFDocument.load(original)
+  } catch (e) {
+    // pdf-lib is compiled to ES5, so its error classes do not survive instanceof.
+    if (e instanceof Error && /encrypted/i.test(e.message)) throw new Error(PROTECTED_MESSAGE)
+    throw e
+  }
   const pages = doc.getPages()
   const problems: ExportProblem[] = []
   const ownAnnots = new Set<PDFPage>()

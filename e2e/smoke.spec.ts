@@ -59,6 +59,13 @@ test.describe('bad uploads', () => {
     await expect(page.getByTestId('upload-input')).toBeAttached()
   })
 
+  test('rejects a permissions-only encrypted PDF (empty user password) up front', async ({ page }) => {
+    await uploadFile(page, 'restricted.pdf', makeEncryptedPdf('', 'owner'))
+    await expect(page.getByRole('alert')).toContainText(/protected/i)
+    await expect(page.getByTestId('upload-input')).toBeAttached()
+    await expect(page.getByTestId('page-0')).toHaveCount(0)
+  })
+
   test('rejects a password-protected PDF with a clear message', async ({ page }) => {
     await uploadFile(page, 'locked.pdf', makeEncryptedPdf())
     await expect(page.getByRole('alert')).toContainText(/password/i)
