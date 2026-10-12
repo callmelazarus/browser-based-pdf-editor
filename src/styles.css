@@ -17,6 +17,8 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
 .page canvas { display: block; }
 .toolbar { display: flex; gap: 4px; flex-wrap: wrap; }
+.tool-column { display: flex; flex-direction: column; gap: 4px; }
+.history { display: flex; gap: 4px; }
 .overlay { position: absolute; inset: 0; pointer-events: none; }
 .overlay svg { display: block; position: absolute; inset: 0; }
 .panel { width: 220px; flex: none; background: #fff; border-left: 1px solid #ced4da; padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow: auto; box-sizing: border-box; }

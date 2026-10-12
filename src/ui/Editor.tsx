@@ -131,9 +131,13 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
       <header className="topbar">
         <button className="button" onClick={handleClose}>Open another file</button>
         <strong className="filename">{file.name}</strong>
-        <Toolbar tool={tool} onTool={chooseTool} />
-        <button className="button" data-testid="undo-button" disabled={!canUndo} onClick={() => store.undo()}>Undo</button>
-        <button className="button" data-testid="redo-button" disabled={!canRedo} onClick={() => store.redo()}>Redo</button>
+        <div className="tool-column">
+          <Toolbar tool={tool} onTool={chooseTool} />
+          <div className="history" role="group" aria-label="History">
+            <button className="button" data-testid="undo-button" disabled={!canUndo} onClick={() => store.undo()}>Undo</button>
+            <button className="button" data-testid="redo-button" disabled={!canRedo} onClick={() => store.redo()}>Redo</button>
+          </div>
+        </div>
         <button className="button primary" data-testid="download-button" disabled={exporting} onClick={() => void handleDownload()}>
           {exporting ? 'Preparing…' : 'Download PDF'}
         </button>

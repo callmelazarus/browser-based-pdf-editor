@@ -53,7 +53,7 @@ test('clicking empty space deselects', async ({ page }) => {
   await rectangle(page).click({ position: { x: 100, y: 30 } })
   await expect(page.getByTestId('handle-se')).toBeVisible()
   const box = (await page.getByTestId('page-overlay-0').boundingBox())!
-  await page.mouse.click(box.x + 500, box.y + 600)
+  await page.mouse.click(box.x + 500, box.y + 450)
   await expect(page.getByTestId('handle-se')).toHaveCount(0)
 })
 
