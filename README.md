@@ -2,6 +2,8 @@
 
 A browser-based tool for marking up PDFs. Open a PDF, add highlights, underlines, strikethrough, rectangles, ellipses, lines, arrows, freehand pen strokes and text boxes, then download a PDF containing real PDF annotations. Everything runs in your browser; your file is never uploaded.
 
+**Live site: https://browser-based-pdf-editor.vercel.app/**
+
 ## Develop
 
 Requires Node `^22.12.0 || ^24.0.0 || >=26.0.0` (Vitest 5's range, which is stricter than Vite 8's `^20.19.0 || >=22.12.0`).
@@ -26,7 +28,7 @@ The original upload is never modified; each download is built from the original 
 
 ## Deploy (Vercel)
 
-Import the repository in Vercel. It detects Vite automatically: build command `npm run build`, output directory `dist`. There are no environment variables and no server.
+Import the repository in Vercel. It detects Vite automatically: build command `npm run build`, output directory `dist`. There are no environment variables and no server. The production deployment is at https://browser-based-pdf-editor.vercel.app/.
 
 ## Limits (v1)
 
