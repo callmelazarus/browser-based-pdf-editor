@@ -30,16 +30,19 @@ const GROUPS: { label: string | null; tools: { id: Tool; label: string }[] }[] =
 ]
 
 interface Props {
-  tool: Tool
+  /** The active tool, or null when none is active (e.g. no file is open). */
+  tool: Tool | null
   onTool: (t: Tool) => void
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
   onRedo: () => void
+  /** Greys out every button; used on the landing screen before a file is open. */
+  disabled?: boolean
 }
 
 /** Left rail: the drawing tools in labelled groups, with Undo and Redo underneath. */
-export function Toolbar({ tool, onTool, canUndo, canRedo, onUndo, onRedo }: Props) {
+export function Toolbar({ tool, onTool, canUndo, canRedo, onUndo, onRedo, disabled = false }: Props) {
   return (
     <nav className="rail" aria-label="Editing tools">
       <div role="toolbar" aria-label="Tools" aria-orientation="vertical" className="rail-tools">
@@ -52,6 +55,7 @@ export function Toolbar({ tool, onTool, canUndo, canRedo, onUndo, onRedo }: Prop
                 className="rail-button"
                 data-testid={`tool-${t.id}`}
                 aria-pressed={tool === t.id}
+                disabled={disabled}
                 onClick={() => onTool(t.id)}
               >
                 <Icon name={t.id} />
@@ -63,11 +67,11 @@ export function Toolbar({ tool, onTool, canUndo, canRedo, onUndo, onRedo }: Prop
       </div>
       <hr className="rail-divider" />
       <div role="group" aria-label="History" className="rail-group">
-        <button className="rail-button" data-testid="undo-button" disabled={!canUndo} onClick={onUndo}>
+        <button className="rail-button" data-testid="undo-button" disabled={disabled || !canUndo} onClick={onUndo}>
           <Icon name="undo" />
           <span>Undo</span>
         </button>
-        <button className="rail-button" data-testid="redo-button" disabled={!canRedo} onClick={onRedo}>
+        <button className="rail-button" data-testid="redo-button" disabled={disabled || !canRedo} onClick={onRedo}>
           <Icon name="redo" />
           <span>Redo</span>
         </button>

@@ -4,18 +4,23 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .button[aria-pressed='true'] { background: #dbe9ff; border-color: #2f7de1; }
 .button:disabled { opacity: 0.4; cursor: default; }
 .button.primary { background: #2f7de1; border-color: #2f7de1; color: #fff; }
-.upload { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 0 16px; }
 .hint { color: #6c757d; font-size: 14px; }
 .error { color: #c92a2a; }
 .editor { height: 100%; display: flex; flex-direction: column; }
 .topbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #ced4da; flex-wrap: wrap; }
 .topbar .spacer { flex: 1; }
 .filename { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filename.muted { color: #868e96; font-weight: normal; }
 .zoom { display: flex; align-items: center; gap: 6px; }
 .workspace { flex: 1; display: flex; min-height: 0; }
 .pages { flex: 1; min-width: 0; overflow: auto; padding: 16px 0; }
 .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
 .page canvas { display: block; }
+.pages.landing { display: flex; }
+.landing-page { width: 480px; max-width: calc(100% - 32px); min-height: 560px; margin: auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); outline: 2px dashed transparent; outline-offset: -10px; }
+.landing-page.dragging { outline-color: #2f7de1; }
+.landing-page h1 { margin: 0; font-size: 28px; }
+.landing-page p { margin: 0; max-width: 340px; }
 .rail { width: 76px; flex: none; display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; background: #fff; border-right: 1px solid #ced4da; overflow-y: auto; box-sizing: border-box; }
 .rail-group { display: flex; flex-direction: column; gap: 2px; }
 .rail-tools { display: flex; flex-direction: column; }
