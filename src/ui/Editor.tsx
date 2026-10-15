@@ -131,16 +131,6 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
       <header className="topbar">
         <button className="button" onClick={handleClose}>Open another file</button>
         <strong className="filename">{file.name}</strong>
-        <div className="tool-column">
-          <Toolbar tool={tool} onTool={chooseTool} />
-          <div className="history" role="group" aria-label="History">
-            <button className="button" data-testid="undo-button" disabled={!canUndo} onClick={() => store.undo()}>Undo</button>
-            <button className="button" data-testid="redo-button" disabled={!canRedo} onClick={() => store.redo()}>Redo</button>
-          </div>
-        </div>
-        <button className="button primary" data-testid="download-button" disabled={exporting} onClick={() => void handleDownload()}>
-          {exporting ? 'Preparing…' : 'Download PDF'}
-        </button>
         <span className="spacer" />
         <div className="zoom">
           <button className="button" data-testid="zoom-out" onClick={() => setScale((s) => nextZoom(s, -1))}>−</button>
@@ -148,6 +138,9 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
           <button className="button" data-testid="zoom-in" onClick={() => setScale((s) => nextZoom(s, 1))}>+</button>
           <button className="button" data-testid="fit-width" onClick={fitWidth}>Fit width</button>
         </div>
+        <button className="button primary" data-testid="download-button" disabled={exporting} onClick={() => void handleDownload()}>
+          {exporting ? 'Preparing…' : 'Download PDF'}
+        </button>
       </header>
       {(problems.length > 0 || exportError) && (
         <div className="banner" role={exportError ? 'alert' : 'status'} data-testid="export-report">
@@ -167,6 +160,14 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
         </div>
       )}
       <div className="workspace">
+        <Toolbar
+          tool={tool}
+          onTool={chooseTool}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={() => store.undo()}
+          onRedo={() => store.redo()}
+        />
         <div className="pages" ref={setPagesRef}>
           {file.doc.pages.map((p) => (
             <PageView key={p.index} page={p} scale={scale} root={pagesEl}>

@@ -16,9 +16,16 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .pages { flex: 1; min-width: 0; overflow: auto; padding: 16px 0; }
 .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
 .page canvas { display: block; }
-.toolbar { display: flex; gap: 4px; flex-wrap: wrap; }
-.tool-column { display: flex; flex-direction: column; gap: 4px; }
-.history { display: flex; gap: 4px; }
+.rail { width: 76px; flex: none; display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; background: #fff; border-right: 1px solid #ced4da; overflow-y: auto; box-sizing: border-box; }
+.rail-group { display: flex; flex-direction: column; gap: 2px; }
+.rail-tools { display: flex; flex-direction: column; }
+.rail-label { margin: 8px 0 2px; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; color: #6c757d; }
+.rail-button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 2px; border: 1px solid transparent; border-radius: 8px; background: none; color: inherit; font: 11px system-ui, sans-serif; cursor: pointer; }
+.rail-button:hover:not(:disabled) { background: #f1f3f5; }
+.rail-button[aria-pressed='true'] { background: #dbe9ff; border-color: #2f7de1; color: #0b4aa2; }
+.rail-button:disabled { opacity: 0.35; cursor: default; }
+.rail-divider { width: calc(100% - 8px); margin: 8px 4px; border: 0; border-top: 1px solid #ced4da; }
+.icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .overlay { position: absolute; inset: 0; pointer-events: none; }
 .overlay svg { display: block; position: absolute; inset: 0; }
 .panel { width: 220px; flex: none; background: #fff; border-left: 1px solid #ced4da; padding: 12px; display: flex; flex-direction: column; gap: 12px; overflow: auto; box-sizing: border-box; }
