@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { extractOwnAnnotations } from '../export/import-own'
 import { openPdf, PdfLoadError } from '../render/pdf-document'
 import type { OpenFile } from './open-file'
 import { Toolbar } from './Toolbar'
@@ -18,9 +19,9 @@ export function UploadScreen({ onOpen }: { onOpen: (f: OpenFile) => void }) {
     setError(null)
     setBusy(true)
     try {
-      const bytes = new Uint8Array(await file.arrayBuffer())
+      const { bytes, annotations } = await extractOwnAnnotations(new Uint8Array(await file.arrayBuffer()))
       const doc = await openPdf(bytes)
-      onOpen({ id: crypto.randomUUID(), name: file.name, bytes, doc })
+      onOpen({ id: crypto.randomUUID(), name: file.name, bytes, annotations, doc })
     } catch (e) {
       setError(e instanceof PdfLoadError ? e.message : 'Could not open this file.')
     } finally {

@@ -2,6 +2,7 @@ import { PDFDocument, PDFHexString, PDFName, PDFPage, PDFRef, PDFString, Standar
 import { PROTECTED_MESSAGE } from '../protected-message'
 import { applyMatrix, screenFrame } from '../coords/frame'
 import type { Annotation } from '../model/types'
+import { ANNOT_KEY, encodeAnnotation } from './annot-data'
 import { buildAppearance } from '../shapes/appearance'
 import { loadHelvetica } from '../text/helvetica'
 import { layoutTextBox } from '../text/layout'
@@ -118,6 +119,7 @@ function addAnnotation(doc: PDFDocument, page: PDFPage, a: Annotation, getFontRe
     AP: { N: apRef },
     ...typeFields(a),
   })
+  dict.set(PDFName.of(ANNOT_KEY), PDFHexString.fromText(encodeAnnotation(a)))
   page.node.addAnnot(ctx.register(dict))
 }
 

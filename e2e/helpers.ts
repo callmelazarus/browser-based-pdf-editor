@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, type Page } from '@playwright/test'
+import { PDFDict, PDFDocument, PDFName } from 'pdf-lib'
 
 export async function uploadFile(page: Page, name: string, bytes: Uint8Array | Buffer) {
   await page.goto('/')
@@ -44,6 +45,20 @@ export function storedAnnotations(page: Page) {
     if (!store) throw new Error('window.__annotationStore is missing (dev build only); refusing to return [] vacuously')
     return store.getState().annotations as Array<Record<string, any>>
   })
+}
+
+/**
+ * The bytes as another PDF viewer sees them: the app's private annotation data removed, so opening
+ * the file here shows the annotations painted into the page instead of lifting them out for editing.
+ */
+export async function asOtherViewerSees(bytes: Uint8Array): Promise<Uint8Array> {
+  const doc = await PDFDocument.load(bytes)
+  for (const page of doc.getPages()) {
+    for (const ref of page.node.Annots()?.asArray() ?? []) {
+      doc.context.lookup(ref, PDFDict).delete(PDFName.of('PdfAnnotatorData'))
+    }
+  }
+  return doc.save()
 }
 
 export async function downloadAnnotated(page: Page): Promise<Uint8Array> {

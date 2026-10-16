@@ -15,7 +15,7 @@ import { useStoreState } from './useStoreState'
 import { nextZoom } from './zoom'
 
 export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void }) {
-  const [store] = useState(() => createStore())
+  const [store] = useState(() => createStore(file.annotations))
   const { annotations, selectedId, canUndo, canRedo, revision } = useStoreState(store)
   const [tool, setTool] = useState<Tool>('select')
   const [styles, setStyles] = useState<ToolStyles>(DEFAULT_STYLES)

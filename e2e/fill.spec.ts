@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { makePdf } from '../tests/helpers/makePdf'
-import { downloadAnnotated, dragOnPage, openPdfInApp, pixelAt, storedAnnotations, waitForPaint } from './helpers'
+import { asOtherViewerSees, downloadAnnotated, dragOnPage, openPdfInApp, pixelAt, storedAnnotations, waitForPaint } from './helpers'
 
 
 for (const rotate of [0, 90] as const) {
@@ -13,7 +13,7 @@ for (const rotate of [0, 90] as const) {
     expect((await storedAnnotations(page))[0].fill).toMatchObject({ b: expect.any(Number) })
 
     const reopened = await page.context().newPage()
-    await openPdfInApp(reopened, await downloadAnnotated(page), 'annotated.pdf')
+    await openPdfInApp(reopened, await asOtherViewerSees(await downloadAnnotated(page)), 'annotated.pdf')
     await waitForPaint(reopened)
     const [r, g, b] = await pixelAt(reopened, 0, 160, 230)
     expect(r).toBeLessThan(80)

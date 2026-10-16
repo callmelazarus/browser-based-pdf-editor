@@ -32,7 +32,7 @@ Import the repository in Vercel. It detects Vite automatically: build command `n
 
 ## Limits (v1)
 
-No text selection or search, no form-filling, no images or signatures, Helvetica only for text boxes (characters outside WinAnsi are replaced with `?` and listed after download), no password-protected PDFs, and a downloaded PDF's annotations cannot be re-opened for editing in this app (other viewers can edit them).
+No text selection or search, no form-filling, no images or signatures, Helvetica only for text boxes (characters outside WinAnsi are replaced with `?` and listed after download), no password-protected PDFs, and only annotations this app wrote can be edited again: it stores a private copy of each one in the PDF, so downloads made before that was added, and annotations from other apps, stay part of the page (other viewers can edit them). If another app edits one of this app's annotations, reopening it here brings back the original, not the edit.
 
 ## Checking a release by hand
 

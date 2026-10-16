@@ -1,15 +1,19 @@
 import { expect, test, type Page } from '@playwright/test'
 import { TEXT_PADDING } from '../src/text/layout'
 import { makePdf, type PageSpec } from '../tests/helpers/makePdf'
-import { darkBounds, downloadAnnotated, dragOnPage, openPdfInApp, pixelAt, rowsMatching, waitForPaint } from './helpers'
+import { asOtherViewerSees, darkBounds, downloadAnnotated, dragOnPage, openPdfInApp, pixelAt, rowsMatching, waitForPaint } from './helpers'
 
 /** Annotate in the app, download, then open the downloaded file in a fresh tab so pdf.js renders the real annotations. */
-async function annotateAndReopen(page: Page, spec: PageSpec, draw: (p: Page) => Promise<void>): Promise<Page> {
+async function annotateAndReopen(
+  page: Page, spec: PageSpec, draw: (p: Page) => Promise<void>,
+  /** true: view the download as another PDF app would; false: open it in this app, which lifts its own annotations for editing. */
+  asOtherViewer = true,
+): Promise<Page> {
   await openPdfInApp(page, await makePdf([spec]))
   await draw(page)
   const exported = await downloadAnnotated(page)
   const reopened = await page.context().newPage()
-  await openPdfInApp(reopened, exported, 'annotated.pdf')
+  await openPdfInApp(reopened, asOtherViewer ? await asOtherViewerSees(exported) : exported, 'annotated.pdf')
   await waitForPaint(reopened)
   return reopened
 }
@@ -95,12 +99,12 @@ for (const rotate of [90, 180, 270] as const) {
 }
 
 test('annotating an already annotated PDF keeps the earlier annotations', async ({ page }) => {
-  // `first` is the app showing the first export; annotate it again and export a second generation.
-  const first = await annotateAndReopen(page, { width: 612, height: 792 }, drawHighlightAndRectangle)
+  // `first` is the app showing the first export (its annotations editable again); annotate it and export a second generation.
+  const first = await annotateAndReopen(page, { width: 612, height: 792 }, drawHighlightAndRectangle, false)
   await first.getByTestId('tool-ellipse').click()
   await dragOnPage(first, [60, 400], [260, 460])
   const second = await first.context().newPage()
-  await openPdfInApp(second, await downloadAnnotated(first), 'twice.pdf')
+  await openPdfInApp(second, await asOtherViewerSees(await downloadAnnotated(first)), 'twice.pdf')
   await waitForPaint(second)
   expect(isYellowish(await pixelAt(second, 0, 160, 130))).toBe(true)
   expect(isRed(await pixelAt(second, 0, 61, 230))).toBe(true)
