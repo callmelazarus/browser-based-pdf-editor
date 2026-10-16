@@ -17,7 +17,7 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .page { position: relative; margin: 0 auto 16px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
 .page canvas { display: block; }
 .pages.landing { display: flex; }
-.landing-page { width: 480px; max-width: calc(100% - 32px); min-height: 560px; margin: auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); outline: 2px dashed transparent; outline-offset: -10px; }
+.landing-page { width: 480px; max-width: calc(100% - 32px); min-height: 560px; margin: auto; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; outline: 2px dashed transparent; outline-offset: -10px; }
 .landing-page.dragging { outline-color: #2f7de1; }
 .landing-page h1 { margin: 0; font-size: 28px; }
 .landing-page p { margin: 0; max-width: 340px; }
