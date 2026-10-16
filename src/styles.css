@@ -39,6 +39,7 @@ body { font-family: system-ui, sans-serif; background: #e9ecef; color: #212529; 
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
 .swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #868e96; cursor: pointer; padding: 0; }
+.swatch-none { background: linear-gradient(135deg, #fff 45%, #e03131 45%, #e03131 55%, #fff 55%); }
 .swatch[aria-pressed='true'] { box-shadow: 0 0 0 2px #2f7de1; }
 .banner { background: #fff3bf; border-bottom: 1px solid #f1c40f; padding: 8px 12px; font-size: 14px; }
 .banner p, .banner ul { margin: 0 0 6px; }

@@ -7,14 +7,14 @@ import { simplifyStroke } from './pen'
 export type DrawTool = AnnotationType
 export type Tool = 'select' | DrawTool
 
-export interface StyleDefaults { color: Rgb; opacity: number; strokeWidth: number; fontSize: number }
+export interface StyleDefaults { color: Rgb; opacity: number; strokeWidth: number; fontSize: number; fill: Rgb | null }
 export type ToolStyles = Record<DrawTool, StyleDefaults>
 
 const RED: Rgb = { r: 0.85, g: 0.1, b: 0.1 }
-const stroke = (color: Rgb, strokeWidth = 2): StyleDefaults => ({ color, opacity: 1, strokeWidth, fontSize: 14 })
+const stroke = (color: Rgb, strokeWidth = 2): StyleDefaults => ({ color, opacity: 1, strokeWidth, fontSize: 14, fill: null })
 
 export const DEFAULT_STYLES: ToolStyles = {
-  highlight: { color: { r: 1, g: 0.92, b: 0 }, opacity: 0.5, strokeWidth: 0, fontSize: 14 },
+  highlight: { color: { r: 1, g: 0.92, b: 0 }, opacity: 0.5, strokeWidth: 0, fontSize: 14, fill: null },
   underline: stroke(RED),
   strikeout: stroke(RED),
   rectangle: stroke(RED),
@@ -22,7 +22,7 @@ export const DEFAULT_STYLES: ToolStyles = {
   line: stroke(RED),
   arrow: stroke(RED),
   pen: stroke(RED, 2.5),
-  text: { color: { r: 0, g: 0, b: 0 }, opacity: 1, strokeWidth: 0, fontSize: 14 },
+  text: { color: { r: 0, g: 0, b: 0 }, opacity: 1, strokeWidth: 0, fontSize: 14, fill: null },
 }
 
 export const MIN_DRAG_PX = 4
@@ -84,7 +84,9 @@ export function draftToAnnotation(
       const rect = viewportRectToUser(g, scale, normalizedRect(d.start, d.current))
       return d.tool === 'highlight'
         ? { ...base, type: 'highlight', rect }
-        : { ...base, type: d.tool, rect, strokeWidth: style.strokeWidth }
+        : d.tool === 'rectangle' && style.fill
+          ? { ...base, type: 'rectangle', rect, strokeWidth: style.strokeWidth, fill: style.fill }
+          : { ...base, type: d.tool, rect, strokeWidth: style.strokeWidth }
     }
   }
 }

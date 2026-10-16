@@ -20,6 +20,7 @@ interface Props {
 export function PropertiesPanel({ type, style, hasSelection, onChange, onBringToFront }: Props) {
   const show = controlsFor(type)
   const hex = rgbToHex(style.color)
+  const fillHex = style.fill ? rgbToHex(style.fill) : null
   return (
     <aside className="panel" aria-label="Properties">
       <h2>{LABELS[type]}</h2>
@@ -35,6 +36,24 @@ export function PropertiesPanel({ type, style, hasSelection, onChange, onBringTo
         </div>
         <input type="color" data-testid="prop-color" value={hex} onChange={(e) => onChange({ color: hexToRgb(e.target.value) }, 'color')} />
       </div>
+      {show.fill && (
+        <div className="field">
+          <span>Fill</span>
+          <div className="swatches">
+            <button
+              className="swatch swatch-none" data-testid="fill-none" aria-label="No fill"
+              aria-pressed={!fillHex} onClick={() => onChange({ fill: null }, 'fill')}
+            />
+            {SWATCHES.map((sw) => (
+              <button
+                key={sw} className="swatch" style={{ background: sw }} data-testid={`fill-swatch-${sw.slice(1)}`}
+                aria-label={`Fill ${sw}`} aria-pressed={sw === fillHex} onClick={() => onChange({ fill: hexToRgb(sw) }, 'fill')}
+              />
+            ))}
+          </div>
+          <input type="color" data-testid="prop-fill" value={fillHex ?? '#ffffff'} onChange={(e) => onChange({ fill: hexToRgb(e.target.value) }, 'fill')} />
+        </div>
+      )}
       {show.opacity && (
         <label className="field">
           <span>Opacity {Math.round(style.opacity * 100)}%</span>

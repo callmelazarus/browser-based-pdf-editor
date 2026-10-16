@@ -82,7 +82,7 @@ function renderBody(a: Annotation, g: PageGeometry, s: number): ReactNode {
         <rect
           x={r.x + sw / 2} y={r.y + sw / 2}
           width={Math.max(0, r.width - sw)} height={Math.max(0, r.height - sw)}
-          fill="none" stroke={color} strokeWidth={sw} strokeOpacity={a.opacity}
+          fill={a.fill ? css(a.fill) : 'none'} fillOpacity={a.opacity} stroke={color} strokeWidth={sw} strokeOpacity={a.opacity}
         />
       )
     }

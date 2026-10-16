@@ -18,7 +18,8 @@ interface Base {
 export interface HighlightAnnotation extends Base { type: 'highlight'; rect: Rect }
 export interface UnderlineAnnotation extends Base { type: 'underline'; rect: Rect; strokeWidth: number }
 export interface StrikeoutAnnotation extends Base { type: 'strikeout'; rect: Rect; strokeWidth: number }
-export interface RectangleAnnotation extends Base { type: 'rectangle'; rect: Rect; strokeWidth: number }
+/** `fill` is the interior colour; absent or null means no fill. */
+export interface RectangleAnnotation extends Base { type: 'rectangle'; rect: Rect; strokeWidth: number; fill?: Rgb | null }
 export interface EllipseAnnotation extends Base { type: 'ellipse'; rect: Rect; strokeWidth: number }
 export interface LineAnnotation extends Base { type: 'line' | 'arrow'; from: Point; to: Point; strokeWidth: number }
 export interface PenAnnotation extends Base { type: 'pen'; points: Point[]; strokeWidth: number }

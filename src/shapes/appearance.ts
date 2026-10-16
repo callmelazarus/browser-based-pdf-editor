@@ -50,8 +50,9 @@ export function buildAppearance(a: Annotation): Appearance {
       return {
         ...base, bbox: rectBBox(a.rect),
         content: [
-          '/GS0 gs', rgb(a.color, true), `${n(a.strokeWidth)} w`,
-          `${n(x + i)} ${n(y + i)} ${n(Math.max(0, width - a.strokeWidth))} ${n(Math.max(0, height - a.strokeWidth))} re`, 'S',
+          '/GS0 gs', ...(a.fill ? [rgb(a.fill, false)] : []), rgb(a.color, true), `${n(a.strokeWidth)} w`,
+          `${n(x + i)} ${n(y + i)} ${n(Math.max(0, width - a.strokeWidth))} ${n(Math.max(0, height - a.strokeWidth))} re`,
+          a.fill ? 'B' : 'S',
         ].join('\n'),
       }
     }

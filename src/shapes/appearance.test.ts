@@ -22,6 +22,11 @@ describe('buildAppearance', () => {
     expect(ap.blendMultiply).toBe(false)
   })
 
+  it('paints the fill under the stroke when a rectangle has one', () => {
+    const ap = buildAppearance({ ...base, type: 'rectangle', strokeWidth: 2, rect, fill: { r: 0, g: 0, b: 1 } })
+    expect(ap.content).toBe('/GS0 gs\n0 0 1 rg\n1 0 0 RG\n2 w\n11 21 98 48 re\nB')
+  })
+
   it('draws an ellipse with four Bezier segments', () => {
     const ap = buildAppearance({ ...base, type: 'ellipse', strokeWidth: 2, rect })
     expect(ap.content.match(/ c$/gm)).toHaveLength(4)

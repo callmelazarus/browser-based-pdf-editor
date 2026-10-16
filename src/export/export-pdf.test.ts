@@ -25,6 +25,16 @@ function apText(d: PDFDict): string {
 const one = (a: Annotation) => [a]
 
 describe('exportPdf', () => {
+  it('writes the interior colour of a filled rectangle and omits it otherwise', async () => {
+    const src = await makePdf([{ width: 200, height: 200 }])
+    const filled = await exportPdf(src, one({ ...base, id: 'f', type: 'rectangle', strokeWidth: 2, rect, fill: { r: 0, g: 0, b: 1 } }))
+    const plain = await exportPdf(src, one({ ...base, id: 'p', type: 'rectangle', strokeWidth: 2, rect }))
+    const ic = async (bytes: Uint8Array) => (await readAnnots(bytes)).dicts[0].get(PDFName.of('IC'))
+    expect((await ic(filled.bytes))?.toString()).toBe('[ 0 0 1 ]')
+    expect(await ic(plain.bytes)).toBeUndefined()
+    expect(apText((await readAnnots(filled.bytes)).dicts[0])).toContain('0 0 1 rg')
+  })
+
   it('writes a native annotation with an appearance stream for each type', async () => {
     const source = await makePdf([{ width: 612, height: 792 }])
     const annotations: Annotation[] = [

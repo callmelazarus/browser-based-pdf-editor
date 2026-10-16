@@ -134,6 +134,10 @@ function typeFields(a: Annotation): Record<string, unknown> {
       return { C: color, QuadPoints: corners.flatMap((c) => { const p = applyMatrix(f.matrix, c); return [p.x, p.y] }) }
     }
     case 'rectangle':
+      return {
+        C: color, BS: { W: a.strokeWidth, S: 'S' },
+        ...(a.fill ? { IC: [a.fill.r, a.fill.g, a.fill.b] } : {}),
+      }
     case 'ellipse':
       return { C: color, BS: { W: a.strokeWidth, S: 'S' } }
     case 'line':
