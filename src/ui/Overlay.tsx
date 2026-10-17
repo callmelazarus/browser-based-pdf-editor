@@ -17,6 +17,8 @@ interface Props {
   tool: Tool
   styles: ToolStyles
   store: AnnotationStore
+  /** Called after a new annotation is committed (it is already selected), so the editor can switch to Select. */
+  onDrawn: () => void
 }
 
 interface Drag {
@@ -36,7 +38,7 @@ const CURSORS: Record<Handle, string> = {
 const BLUE = '#2f7de1'
 const HANDLE_STYLE = { pointerEvents: 'auto', touchAction: 'none' } as const
 
-export function Overlay({ pageIndex, geometry, scale, tool, styles, store }: Props) {
+export function Overlay({ pageIndex, geometry, scale, tool, styles, store, onDrawn }: Props) {
   const { annotations, selectedId } = useStoreState(store)
   const svgRef = useRef<SVGSVGElement>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -155,7 +157,10 @@ export function Overlay({ pageIndex, geometry, scale, tool, styles, store }: Pro
     const ann = toAnnotation(done, crypto.randomUUID())
     if (!ann) return
     if (ann.type === 'text') setTextEdit({ annotation: ann, isNew: true })
-    else store.add(ann)
+    else {
+      store.add(ann)
+      onDrawn()
+    }
   }
 
   /** Handled here, not on the annotation, because the svg holds pointer capture after a press. */
@@ -254,7 +259,10 @@ export function Overlay({ pageIndex, geometry, scale, tool, styles, store }: Pro
             const { annotation, isNew } = textEdit
             setTextEdit(null)
             if (isNew) {
-              if (text.trim()) store.add({ ...annotation, text })
+              if (text.trim()) {
+                store.add({ ...annotation, text })
+                onDrawn()
+              }
             } else if (!text.trim()) {
               store.remove(annotation.id)
             } else if (text !== annotation.text) {

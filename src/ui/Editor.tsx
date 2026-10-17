@@ -171,7 +171,7 @@ export function Editor({ file, onClose }: { file: OpenFile; onClose: () => void 
         <div className="pages" ref={setPagesRef}>
           {file.doc.pages.map((p) => (
             <PageView key={p.index} page={p} scale={scale} root={pagesEl}>
-              <Overlay pageIndex={p.index} geometry={p.geometry} scale={scale} tool={tool} styles={styles} store={store} />
+              <Overlay pageIndex={p.index} geometry={p.geometry} scale={scale} tool={tool} styles={styles} store={store} onDrawn={() => setTool('select')} />
             </PageView>
           ))}
         </div>
