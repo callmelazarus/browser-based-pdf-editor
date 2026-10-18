@@ -7,7 +7,7 @@ export function styleOf(a: Annotation): StyleDefaults {
     opacity: a.opacity,
     strokeWidth: 'strokeWidth' in a ? a.strokeWidth : DEFAULT_STYLES[a.type].strokeWidth,
     fontSize: a.type === 'text' ? a.fontSize : DEFAULT_STYLES[a.type].fontSize,
-    fill: a.type === 'rectangle' ? (a.fill ?? null) : null,
+    fill: a.type === 'rectangle' || a.type === 'ellipse' ? (a.fill ?? null) : null,
   }
 }
 
@@ -17,7 +17,7 @@ export function stylePatchFor(a: Annotation, patch: Partial<StyleDefaults>): Par
   if (patch.opacity !== undefined) out.opacity = patch.opacity
   if (patch.strokeWidth !== undefined && 'strokeWidth' in a) out.strokeWidth = patch.strokeWidth
   if (patch.fontSize !== undefined && a.type === 'text') out.fontSize = patch.fontSize
-  if (patch.fill !== undefined && a.type === 'rectangle') out.fill = patch.fill
+  if (patch.fill !== undefined && (a.type === 'rectangle' || a.type === 'ellipse')) out.fill = patch.fill
   return out as Partial<Annotation>
 }
 
@@ -26,6 +26,6 @@ export function controlsFor(type: AnnotationType) {
     opacity: type !== 'text',
     strokeWidth: type !== 'highlight' && type !== 'text',
     fontSize: type === 'text',
-    fill: type === 'rectangle',
+    fill: type === 'rectangle' || type === 'ellipse',
   }
 }

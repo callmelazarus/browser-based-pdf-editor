@@ -20,7 +20,7 @@ export interface UnderlineAnnotation extends Base { type: 'underline'; rect: Rec
 export interface StrikeoutAnnotation extends Base { type: 'strikeout'; rect: Rect; strokeWidth: number }
 /** `fill` is the interior colour; absent or null means no fill. */
 export interface RectangleAnnotation extends Base { type: 'rectangle'; rect: Rect; strokeWidth: number; fill?: Rgb | null }
-export interface EllipseAnnotation extends Base { type: 'ellipse'; rect: Rect; strokeWidth: number }
+export interface EllipseAnnotation extends Base { type: 'ellipse'; rect: Rect; strokeWidth: number; fill?: Rgb | null }
 export interface LineAnnotation extends Base { type: 'line' | 'arrow'; from: Point; to: Point; strokeWidth: number }
 export interface PenAnnotation extends Base { type: 'pen'; points: Point[]; strokeWidth: number }
 export interface TextAnnotation extends Base { type: 'text'; rect: Rect; text: string; fontSize: number }

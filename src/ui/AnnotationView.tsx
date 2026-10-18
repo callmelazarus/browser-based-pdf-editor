@@ -93,7 +93,7 @@ function renderBody(a: Annotation, g: PageGeometry, s: number): ReactNode {
         <ellipse
           cx={r.x + r.width / 2} cy={r.y + r.height / 2}
           rx={Math.max(0, (r.width - sw) / 2)} ry={Math.max(0, (r.height - sw) / 2)}
-          fill="none" stroke={color} strokeWidth={sw} strokeOpacity={a.opacity}
+          fill={a.fill ? css(a.fill) : 'none'} fillOpacity={a.opacity} stroke={color} strokeWidth={sw} strokeOpacity={a.opacity}
         />
       )
     }

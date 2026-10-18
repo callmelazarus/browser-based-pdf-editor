@@ -58,17 +58,17 @@ export function decodeAnnotation(json: string, id: string, page: number): Annota
       return r ? { ...base, type: 'highlight', rect: r } : null
     }
     case 'underline':
-    case 'strikeout':
-    case 'ellipse': {
+    case 'strikeout': {
       const r = rect(raw.rect)
       return r && strokeWidth !== null ? { ...base, type: raw.type, rect: r, strokeWidth } : null
     }
-    case 'rectangle': {
+    case 'rectangle':
+    case 'ellipse': {
       const r = rect(raw.rect)
       if (!r || strokeWidth === null) return null
-      if (raw.fill === undefined || raw.fill === null) return { ...base, type: 'rectangle', rect: r, strokeWidth }
+      if (raw.fill === undefined || raw.fill === null) return { ...base, type: raw.type, rect: r, strokeWidth }
       const fill = rgb(raw.fill)
-      return fill ? { ...base, type: 'rectangle', rect: r, strokeWidth, fill } : null
+      return fill ? { ...base, type: raw.type, rect: r, strokeWidth, fill } : null
     }
     case 'line':
     case 'arrow': {

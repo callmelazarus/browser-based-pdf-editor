@@ -33,6 +33,12 @@ describe('buildAppearance', () => {
     expect(ap.content.endsWith('h\nS')).toBe(true)
   })
 
+  it('paints an ellipse fill under its stroke', () => {
+    const ap = buildAppearance({ ...base, type: 'ellipse', strokeWidth: 2, rect, fill: { r: 0, g: 0, b: 1 } })
+    expect(ap.content.startsWith('/GS0 gs\n0 0 1 rg\n1 0 0 RG\n2 w\n')).toBe(true)
+    expect(ap.content.endsWith('h\nB')).toBe(true)
+  })
+
   it('draws underline along the bottom and strikeout through the middle of the screen frame', () => {
     const under = buildAppearance({ ...base, type: 'underline', strokeWidth: 2, rect })
     expect(under.content).toBe('/GS0 gs\n1 0 0 RG\n2 w\n1 0 0 1 10 20 cm\n0 1 m\n100 1 l\nS')

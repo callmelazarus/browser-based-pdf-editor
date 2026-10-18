@@ -13,7 +13,7 @@ const all: Annotation[] = [
   { ...base, id: 'u', type: 'underline', strokeWidth: 2, rect },
   { ...base, id: 's', type: 'strikeout', strokeWidth: 2, rect },
   { ...base, id: 'r', type: 'rectangle', strokeWidth: 3, rect, fill: { r: 0, g: 0, b: 1 } },
-  { ...base, id: 'e', type: 'ellipse', strokeWidth: 2, rect },
+  { ...base, id: 'e', type: 'ellipse', strokeWidth: 2, rect, fill: { r: 0, g: 1, b: 0 } },
   { ...base, id: 'l', type: 'line', strokeWidth: 2, from: { x: 0, y: 0 }, to: { x: 50, y: 50 } },
   { ...base, id: 'a', type: 'arrow', strokeWidth: 2, from: { x: 0, y: 0 }, to: { x: 50, y: 50 } },
   { ...base, id: 'p', type: 'pen', strokeWidth: 2.5, points: [{ x: 1, y: 2 }, { x: 3, y: 4 }] },

@@ -84,8 +84,8 @@ export function draftToAnnotation(
       const rect = viewportRectToUser(g, scale, normalizedRect(d.start, d.current))
       return d.tool === 'highlight'
         ? { ...base, type: 'highlight', rect }
-        : d.tool === 'rectangle' && style.fill
-          ? { ...base, type: 'rectangle', rect, strokeWidth: style.strokeWidth, fill: style.fill }
+        : (d.tool === 'rectangle' || d.tool === 'ellipse') && style.fill
+          ? { ...base, type: d.tool, rect, strokeWidth: style.strokeWidth, fill: style.fill }
           : { ...base, type: d.tool, rect, strokeWidth: style.strokeWidth }
     }
   }

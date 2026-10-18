@@ -20,14 +20,18 @@ describe('style helpers', () => {
     expect(stylePatchFor(t, { fontSize: 30, strokeWidth: 9 })).toEqual({ fontSize: 30 })
   })
 
-  it('reads and patches the fill of rectangles only', () => {
+  it('reads and patches the fill of rectangles and ellipses only', () => {
     const r: Annotation = { ...base, type: 'rectangle', rect, strokeWidth: 2 }
     expect(styleOf(r).fill).toBeNull()
     expect(styleOf({ ...r, fill: { r: 0, g: 1, b: 0 } }).fill).toEqual({ r: 0, g: 1, b: 0 })
     expect(stylePatchFor(r, { fill: { r: 0, g: 1, b: 0 } })).toEqual({ fill: { r: 0, g: 1, b: 0 } })
     expect(stylePatchFor(r, { fill: null })).toEqual({ fill: null })
     const e: Annotation = { ...base, type: 'ellipse', rect, strokeWidth: 2 }
-    expect(stylePatchFor(e, { fill: { r: 0, g: 1, b: 0 } })).toEqual({})
+    expect(stylePatchFor(e, { fill: { r: 0, g: 1, b: 0 } })).toEqual({ fill: { r: 0, g: 1, b: 0 } })
+    const l: Annotation = { ...base, type: 'line', from: { x: 0, y: 0 }, to: { x: 5, y: 5 }, strokeWidth: 2 }
+    expect(stylePatchFor(l, { fill: { r: 0, g: 1, b: 0 } })).toEqual({})
+    expect(controlsFor('ellipse').fill).toBe(true)
+    expect(controlsFor('line').fill).toBe(false)
   })
 
   it('shows the right controls per type', () => {

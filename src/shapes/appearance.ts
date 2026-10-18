@@ -65,12 +65,12 @@ export function buildAppearance(a: Annotation): Appearance {
       return {
         ...base, bbox: rectBBox(a.rect),
         content: [
-          '/GS0 gs', rgb(a.color, true), `${n(a.strokeWidth)} w`, `${n(cx + rx)} ${n(cy)} m`,
+          '/GS0 gs', ...(a.fill ? [rgb(a.fill, false)] : []), rgb(a.color, true), `${n(a.strokeWidth)} w`, `${n(cx + rx)} ${n(cy)} m`,
           c(cx + rx, cy + K * ry, cx + K * rx, cy + ry, cx, cy + ry),
           c(cx - K * rx, cy + ry, cx - rx, cy + K * ry, cx - rx, cy),
           c(cx - rx, cy - K * ry, cx - K * rx, cy - ry, cx, cy - ry),
           c(cx + K * rx, cy - ry, cx + rx, cy - K * ry, cx + rx, cy),
-          'h', 'S',
+          'h', a.fill ? 'B' : 'S',
         ].join('\n'),
       }
     }

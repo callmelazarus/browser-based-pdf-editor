@@ -42,3 +42,19 @@ test('fill can be set, cleared and undone on a selected rectangle, and defaults 
   await page.keyboard.press('ControlOrMeta+z')
   expect((await storedAnnotations(page))[0].fill).not.toBeNull()
 })
+
+test("an ellipse's fill survives download", async ({ page }) => {
+  await openPdfInApp(page, await makePdf([{ width: 612, height: 792 }]))
+  await page.getByTestId('tool-ellipse').click()
+  await page.getByTestId('fill-swatch-43a047').click()
+  await dragOnPage(page, [60, 200], [260, 300])
+
+  const reopened = await page.context().newPage()
+  await openPdfInApp(reopened, await asOtherViewerSees(await downloadAnnotated(page)), 'annotated.pdf')
+  await waitForPaint(reopened)
+  const [r, g, b] = await pixelAt(reopened, 0, 160, 250)
+  expect(g).toBeGreaterThan(r + 60)
+  expect(g).toBeGreaterThan(b + 60)
+  // a corner of the bounding box is outside the ellipse
+  expect((await pixelAt(reopened, 0, 64, 204)).slice(0, 3)).toEqual([255, 255, 255])
+})
